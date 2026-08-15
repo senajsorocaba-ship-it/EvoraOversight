@@ -1,0 +1,3 @@
+# O motor do Briefing usa SOMENTE a biblioteca padrão do Python 3.
+# Não precisa instalar nada além do Python (python.org).
+# (urllib, json, xml, subprocess, statistics, datetime — todos já vêm no Python.)

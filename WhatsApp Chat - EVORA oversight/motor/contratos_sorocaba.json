@@ -1,0 +1,123 @@
+[
+  {
+    "numero": "46634044000174-2-000077/2026",
+    "objeto": "FORNEC. DE COPOS DESCARTAVEIS P/ATENDER AS UNID. EXTERNAS DA PREFEITURA EXC SEDU",
+    "valor": 164625.0,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "EASY CLEAN DISTRIBUIDORA LTDA",
+    "data_publicacao": "2026-06-17T09:43:20",
+    "municipio": "Sorocaba",
+    "relevancia": "rotina",
+    "indicio": ""
+  },
+  {
+    "numero": "46634044000174-2-000078/2026",
+    "objeto": "FORNEC. DE COPOS DESCARTAVEIS P/ATENDER AS UNID. EXTERNAS DA PREFEITURA EXC SEDU",
+    "valor": 9950.0,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "RICARDO GONCALVES ITAPIRA",
+    "data_publicacao": "2026-06-17T09:43:43",
+    "municipio": "Sorocaba",
+    "relevancia": "rotina",
+    "indicio": ""
+  },
+  {
+    "numero": "46634044000174-2-000079/2026",
+    "objeto": "FORNECIMENTO DE MATERIAL DE ESCRITORIO P ARA A SECRETARIA DE EDUCACAO",
+    "valor": 370952.91,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "TUPIRATINS MATERIAIS ESCOLARES EIRELI",
+    "data_publicacao": "2026-06-18T15:51:41",
+    "municipio": "Sorocaba",
+    "relevancia": "rotina",
+    "indicio": ""
+  },
+  {
+    "numero": "46634044000174-2-000080/2026",
+    "objeto": "REFORMA  DO ESTADIO MUNICIPAL \"WALTER RIBEIRO\" - CIC.",
+    "valor": 6148203.07,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "CONSORCIO SILICON ENERGY -FIP",
+    "data_publicacao": "2026-06-30T10:47:57",
+    "municipio": "Sorocaba",
+    "relevancia": "atenção",
+    "indicio": "valor ~1557% acima da mediana dos contratos do período; sugiro verificar. Base: mediana de 11 contratos no PNCP (R$ 370,952.91)."
+  },
+  {
+    "numero": "46634044000174-2-000081/2026",
+    "objeto": "FORNECIMENTO DE MATERIAIS DE ESCRITORIO ",
+    "valor": 43687.4,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "RODRIGO TONELOTTO",
+    "data_publicacao": "2026-06-30T18:21:22",
+    "municipio": "Sorocaba",
+    "relevancia": "rotina",
+    "indicio": ""
+  },
+  {
+    "numero": "46634044000174-2-000082/2026",
+    "objeto": "REFORMA DO GINASIO PROF EDSON ANTAO SOUZ A - NILTON TORRES",
+    "valor": 389840.82,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "RVV CONSTRUES E EMPREENDIMENTOS LTDA",
+    "data_publicacao": "2026-07-01T16:01:39",
+    "municipio": "Sorocaba",
+    "relevancia": "rotina",
+    "indicio": ""
+  },
+  {
+    "numero": "46634044000174-2-000083/2026",
+    "objeto": "CONSTRUCAO DO CENTRO DE EXPOSICAO DOS PR ODUTORES NO PARQUE TECNOLOGICO",
+    "valor": 3039900.0,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "UNO PLANO CONSTRUTORA LIMITADA",
+    "data_publicacao": "2026-07-02T13:28:07",
+    "municipio": "Sorocaba",
+    "relevancia": "atenção",
+    "indicio": "valor ~719% acima da mediana dos contratos do período; sugiro verificar. Base: mediana de 11 contratos no PNCP (R$ 370,952.91)."
+  },
+  {
+    "numero": "46634044000174-2-000084/2026",
+    "objeto": "CONSTRUCAO DO ESTACIONAMENTO DO CENTRO DE EXPOSICAO DOS PRODUTORES",
+    "valor": 1095108.36,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "W2 MANUTENCOES, CONSTRUCOES E REFORMAS LTDA",
+    "data_publicacao": "2026-07-03T16:43:07",
+    "municipio": "Sorocaba",
+    "relevancia": "atenção",
+    "indicio": "valor ~195% acima da mediana dos contratos do período; sugiro verificar. Base: mediana de 11 contratos no PNCP (R$ 370,952.91)."
+  },
+  {
+    "numero": "46634044000174-2-000085/2026",
+    "objeto": "AQUSICAO DE MOVEIS MODULADOS PARA SALAS DE ODONTOLOGIA DAS UNID. DE SAUDE DE SOR",
+    "valor": 87528.09,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "KIENTRO BRASIL LTDA",
+    "data_publicacao": "2026-07-07T16:36:51",
+    "municipio": "Sorocaba",
+    "relevancia": "rotina",
+    "indicio": ""
+  },
+  {
+    "numero": "46634044000174-2-000086/2026",
+    "objeto": "REVITALIZACAO DO BOLSAO DE AMBULANTES NO JULIO DE MESQUITA",
+    "valor": 352900.0,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "VIVA CONSTRUCOES E SERVICOS LTDA",
+    "data_publicacao": "2026-07-08T13:09:16",
+    "municipio": "Sorocaba",
+    "relevancia": "rotina",
+    "indicio": ""
+  },
+  {
+    "numero": "46634044000174-2-000087/2026",
+    "objeto": "SERV. DE LOCACAO DE CAMINHOES BAU P/ATEN DER A COLETA SEL. DO MUNICIPIO SEMA",
+    "valor": 7268595.84,
+    "orgao": "MUNICIPIO DE SOROCABA",
+    "fornecedor": "IMPREJ ENGENHARIA LTDA",
+    "data_publicacao": "2026-07-16T09:32:06",
+    "municipio": "Sorocaba",
+    "relevancia": "atenção",
+    "indicio": "valor ~1859% acima da mediana dos contratos do período; sugiro verificar. Base: mediana de 11 contratos no PNCP (R$ 370,952.91)."
+  }
+]
