@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Évora — Organograma 1b: Arquitetura Técnica</title>
+<style>
+:root{--navy:#000F40;--navy2:#0a1b4a;--gold:#B5985A;--gold-light:#E4CE97;
+--paper:#F7F5EF;--card:#FBFAF6;--ink:#23272E;--muted:#5B6470;--line:#E6E0D2;
+--c1:#2c5b8f;--c1bg:#e8f0f8;--c2:#2f7d4f;--c2bg:#e7f2ea;--c3:#7a4fa0;--c3bg:#f0e9f7;--c4:#a9701a;--c4bg:#f7efdf;--c5:#8A2F2F;--c5bg:#f7e6e5;--c6:#3a4a63;--c6bg:#eceff4}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5;padding-bottom:50px}
+.serif{font-family:Georgia,"Times New Roman",serif}
+.top{background:var(--navy);color:#fff;padding:18px 22px;text-align:center}
+.top .t{font-family:Georgia,serif;font-size:22px}.top .s{font-size:12px;color:#9fb2cc;margin-top:4px}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 16px}
+.connector{width:2px;height:20px;background:var(--gold);margin:0 auto}
+.arrow{text-align:center;color:var(--gold);font-size:18px;margin:2px 0}
+
+.layer{border-radius:14px;padding:16px 18px;margin-bottom:4px;border:1px solid var(--line)}
+.layer .lh{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.layer .lnum{width:30px;height:30px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none}
+.layer .lt{font-family:Georgia,serif;font-size:17px}
+.layer .lsub{font-size:11.5px;color:var(--muted);margin-left:auto;text-align:right;max-width:50%}
+.items{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.it{background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font-size:12px}
+.it b{color:var(--navy)}.it .d{color:var(--muted);font-size:10.5px;display:block;margin-top:2px}
+.it.new{border-style:dashed;border-color:var(--gold)}
+.it.new::after{content:" a construir";font-size:9px;color:var(--gold);font-weight:700}
+
+.l1{background:var(--c1bg);border-top:4px solid var(--c1)}.l1 .lnum{background:var(--c1)}.l1 .lt{color:var(--c1)}
+.l2{background:var(--c2bg);border-top:4px solid var(--c2)}.l2 .lnum{background:var(--c2)}.l2 .lt{color:var(--c2)}
+.l3{background:var(--c3bg);border-top:4px solid var(--c3)}.l3 .lnum{background:var(--c3)}.l3 .lt{color:var(--c3)}
+.l4{background:var(--c4bg);border-top:4px solid var(--c4)}.l4 .lnum{background:var(--c4)}.l4 .lt{color:var(--c4)}
+.l5{background:var(--c5bg);border-top:4px solid var(--c5)}.l5 .lnum{background:var(--c5)}.l5 .lt{color:var(--c5)}
+.l6{background:var(--c6bg);border-top:4px solid var(--c6)}.l6 .lnum{background:var(--c6)}.l6 .lt{color:var(--c6)}
+
+.sidebar{background:#fff;border:1px dashed var(--c5);border-radius:11px;padding:12px 15px;margin:16px 0;font-size:12px}
+.sidebar b{color:var(--c5)}
+.status{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:22px;font-size:11px;color:var(--muted)}
+.status span{display:flex;align-items:center;gap:5px}.sd{width:11px;height:11px;border-radius:3px}
+.foot{text-align:center;font-size:11px;color:var(--muted);margin-top:24px}
+.note{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:10px;padding:12px 15px;font-size:12.5px;color:#3f4651;margin-top:20px}
+</style></head><body>
+<div class="top">
+  <div class="t serif">Organograma 1b — Arquitetura Técnica</div>
+  <div class="s">Évora Oversight · da interface à nuvem · o mapa do desenvolvimento real</div>
+</div>
+<div class="wrap">
+
+  <!-- CAMADA 1: APRESENTAÇÃO -->
+  <div class="layer l1">
+    <div class="lh"><span class="lnum">1</span><span class="lt">Camada de Apresentação (Frontend)</span><span class="lsub">o que a pessoa vê e toca · navegador / celular</span></div>
+    <div class="items">
+      <div class="it"><b>Tela de abertura</b><span class="d">logo, voz, face → entra</span></div>
+      <div class="it"><b>Dashboard geral</b><span class="d">2 mundos, blocos, sino</span></div>
+      <div class="it"><b>Telas das abas</b><span class="d">briefing, demandas, agenda, ata…</span></div>
+      <div class="it"><b>Design System</b><span class="d">navy/gold, Georgia, componentes</span></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:9px">Hoje: <b>maquetes HTML aprovadas</b>. A construir: virar componentes reais que conversam com o backend.</div>
+  </div>
+  <div class="arrow">↕ chamadas de API (HTTPS)</div>
+
+  <!-- CAMADA 2: APLICAÇÃO / BACKEND -->
+  <div class="layer l2">
+    <div class="lh"><span class="lnum">2</span><span class="lt">Camada de Aplicação (Backend / API)</span><span class="lsub">a lógica · recebe pedidos, aplica regras, responde</span></div>
+    <div class="items">
+      <div class="it new"><b>API REST</b><span class="d">endpoints por módulo</span></div>
+      <div class="it new"><b>Autenticação</b><span class="d">login, sessão, papéis/alçada</span></div>
+      <div class="it new"><b>Regras de negócio</b><span class="d">semáforo, cancelamento, soft delete</span></div>
+      <div class="it new"><b>Trilha (Aegis)</b><span class="d">grava toda operação, imutável</span></div>
+      <div class="it new"><b>Multi-tenant</b><span class="d">isola cada cliente + 2 mundos</span></div>
+    </div>
+  </div>
+  <div class="arrow">↕ consultas ao banco</div>
+
+  <!-- CAMADA 3: IA / AGENTES -->
+  <div class="layer l3">
+    <div class="lh"><span class="lnum">3</span><span class="lt">Camada de Inteligência (IA / Agentes)</span><span class="lsub">Bia, Nil e os 26 agentes · onde a API da Claude entra</span></div>
+    <div class="items">
+      <div class="it"><b>Motor do Briefing</b><span class="d">já existe · coleta + Bia escreve</span></div>
+      <div class="it new"><b>Orquestrador de agentes</b><span class="d">roteia pedido ao agente certo</span></div>
+      <div class="it new"><b>Camada de caráter</b><span class="d">cláusula travada em todo prompt</span></div>
+      <div class="it new"><b>Aprendizado</b><span class="d">memória por tenant</span></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:9px">Conecta à <b>API Anthropic</b> (chave). O motor do briefing é o primeiro pedaço já funcional.</div>
+  </div>
+  <div class="arrow">↕</div>
+
+  <!-- CAMADA 4: DADOS -->
+  <div class="layer l4">
+    <div class="lh"><span class="lnum">4</span><span class="lt">Camada de Dados (Banco de Dados)</span><span class="lsub">onde tudo mora · começar por aqui</span></div>
+    <div class="items">
+      <div class="it new"><b>Banco relacional</b><span class="d">usuários, demandas, agenda, atas, fontes…</span></div>
+      <div class="it new"><b>Veritas-Dados</b><span class="d">informação verificada (CVI)</span></div>
+      <div class="it new"><b>Documentos</b><span class="d">arquivos/PDFs + OCR</span></div>
+      <div class="it new"><b>Bancos separados</b><span class="d">gabinete × campanha (isolados)</span></div>
+    </div>
+  </div>
+  <div class="arrow">↕ coleta externa</div>
+
+  <!-- CAMADA 5: FONTES EXTERNAS -->
+  <div class="layer l5">
+    <div class="lh"><span class="lnum">5</span><span class="lt">Fontes Externas (Coletores)</span><span class="lsub">de onde vem a informação · Central de Fontes</span></div>
+    <div class="items">
+      <div class="it"><b>Diário Oficial (COM)</b><span class="d">já mapeado</span></div>
+      <div class="it"><b>PNCP</b><span class="d">contratos · já no motor</span></div>
+      <div class="it"><b>5 jornais Sorocaba</b><span class="d">já no motor</span></div>
+      <div class="it new"><b>APIs mapa/clima</b><span class="d">deslocamento, tempo</span></div>
+      <div class="it new"><b>TCE, Câmara</b><span class="d">a integrar</span></div>
+    </div>
+  </div>
+  <div class="arrow">↕ tudo roda sobre</div>
+
+  <!-- CAMADA 6: INFRAESTRUTURA / NUVEM -->
+  <div class="layer l6">
+    <div class="lh"><span class="lnum">6</span><span class="lt">Infraestrutura (Nuvem)</span><span class="lsub">onde o sistema vive · recomendação: nuvem desde o início</span></div>
+    <div class="items">
+      <div class="it new"><b>Hospedagem cloud</b><span class="d">servidores gerenciados</span></div>
+      <div class="it new"><b>Backup & recuperação</b><span class="d">automático</span></div>
+      <div class="it new"><b>Certificado/HTTPS</b><span class="d">segurança de transporte</span></div>
+      <div class="it new"><b>Monitoramento</b><span class="d">saúde dos serviços</span></div>
+    </div>
+  </div>
+
+  <!-- SEGURANÇA TRANSVERSAL -->
+  <div class="sidebar"><b>🔒 Segurança & Auditoria — atravessa TODAS as camadas:</b> SISEC (cibersegurança), Aegis (cofre soberano Zero-Knowledge + trilha imutável), controle de acesso por alçada (N1–N5), criptografia. Não é uma camada isolada — é uma exigência em cada uma.</div>
+
+  <div class="note"><b>Como ler este mapa para o desenvolvimento:</b> constrói-se de baixo para cima na fundação (6→4: nuvem, banco), depois de dentro para fora (2→1: backend, telas), acendendo a inteligência (3) e as fontes (5) módulo a módulo. O que está <b>sólido</b> já existe; o <b>tracejado dourado</b> é o que falta construir — que é a maior parte.</div>
+
+  <div class="status">
+    <span><span class="sd" style="background:#fff;border:1px solid var(--line)"></span> Já existe / mapeado</span>
+    <span><span class="sd" style="background:#fff;border:1px dashed var(--gold)"></span> A construir</span>
+  </div>
+
+  <div class="foot">ÉVORA OVERSIGHT · Organograma 1b (Arquitetura Técnica) · base Manual V10.0 · Confidencial</div>
+</div>
+</body></html>

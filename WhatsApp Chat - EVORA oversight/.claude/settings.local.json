@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -o -q \"00000006-Evora Motor Briefing.zip\" -d .)",
+      "Bash(cp \"00000037-render briefing evora.py\" \"motor/render_briefing_evora.py\")",
+      "Bash(cp \"00000038-noticias.json\" \"motor/noticias.json\")",
+      "Bash(python3 -c \"import json;print\\(len\\(json.load\\(open\\('motor/noticias.json',encoding='utf-8'\\)\\)\\)\\)\")",
+      "Bash(echo \"restaurado: $\\(python3 -c \"import json;print\\(len\\(json.load\\(open\\('motor/noticias.json',encoding='utf-8'\\)\\)\\)\\)\" 2>/dev/null || wc -l motor/noticias.json\\) itens/linhas\")",
+      "Bash(curl -sI https://news.google.com --connect-timeout 10)",
+      "Bash(openssl s_client -connect news.google.com:443 -servername news.google.com)",
+      "Bash(python *)",
+      "Bash(curl -s -m 20 \"https://pncp.gov.br/api/consulta/v1/contratos?pagina=1&dataInicial=20260617&dataFinal=20260717&cnpjOrgao=46634044000174\" -H \"User-Agent: Evora-Oversight/1.0\" -w \"\\\\nHTTP_STATUS:%{http_code}\\\\n\" -o /tmp/pncp_sorocaba_test.json -D -)",
+      "Bash(curl -s -m 20 'https://pncp.gov.br/api/consulta/v1/contratos?pagina=1&dataInicial=20260617&dataFinal=20260717&cnpjOrgao=46634044000174' -H 'User-Agent: Evora-Oversight/1.0' -o 'C:\\\\Users\\\\user\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\D--WhatsApp-Chat---EVORA-oversight\\\\940f4ae1-c954-4b0a-a30a-e0e695d93c81\\\\scratchpad/pncp_test.json')",
+      "Bash(find /c/Users/user -maxdepth 4 -iname \"*bloco*\" 2>/dev/null)",
+      "Read(//c/Users/user/**)",
+      "Bash(supabase --version)",
+      "Bash(env)",
+      "Bash(ls -la \"/d/AO SUPABASE BLOCO1\")",
+      "Read(//d/AO SUPABASE BLOCO1/**)"
+    ]
+  }
+}

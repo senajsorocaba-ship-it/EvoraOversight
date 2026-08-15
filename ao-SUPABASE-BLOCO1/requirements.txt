@@ -1,0 +1,7 @@
+# Dependência única do motor de execução (evora_motor_execucao.py):
+# o SDK oficial da Anthropic, para chamar a API da Claude corretamente
+# (thinking adaptativo, effort, stop_reason=refusal, etc.).
+#
+# A parte que fala com o Supabase (PostgREST) usa só a biblioteca padrão do
+# Python (urllib) — não precisa de supabase-py nem de requests.
+anthropic>=0.68.0

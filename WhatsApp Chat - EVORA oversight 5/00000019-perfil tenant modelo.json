@@ -1,0 +1,37 @@
+{
+  "tenant": "MODELO-GENERICO",
+  "autoridade": {
+    "nome": "[NOME DA AUTORIDADE]",
+    "variacoes_nome": ["[variação 1]", "[variação 2]"],
+    "cargo_atual": "[cargo]",
+    "municipio": "[município]",
+    "uf": "[UF]",
+    "partido": "[partido]",
+    "pre_candidatura_2026": "[cargo pretendido ou vazio]"
+  },
+  "briefing": {
+    "horario": "06:45",
+    "fuso": "America/Sao_Paulo",
+    "tom": "factual, conciso, respeitoso; sem opinião pessoal nem recomendação de voto",
+    "blocos": ["Resumo do dia", "Pulso da Câmara", "Fiscalização do Executivo", "Monitoramento & Imprensa", "Movimento sugerido (72h)"]
+  },
+  "monitoramento": {
+    "politicos_pessoas": [],
+    "orgaos": [],
+    "temas": [],
+    "veiculos": [],
+    "internacional_foco": []
+  },
+  "fiscalizacao": {
+    "ambito": "municipal",
+    "fontes": ["Diário Oficial [definir]", "PNCP"],
+    "limiar_desvio": 0.30,
+    "regra": "indício para verificação humana; nunca acusação; base de comparação sempre declarada"
+  },
+  "travas": {
+    "freio_humano": true,
+    "fontes_publicas_e_licitas": true,
+    "lgpd_termo_demandas": "obrigatório desde o dia 1",
+    "separacao_gabinete_campanha": true
+  }
+}

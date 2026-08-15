@@ -1,0 +1,45 @@
+[13/07/2026, 13:33:09] EVORA oversight: ‎Você criou o grupo “EVORA oversight”
+[13/07/2026, 13:33:09] EVORA oversight: ‎As mensagens e ligações são protegidas com a criptografia de ponta a ponta. Somente as pessoas que fazem parte da conversa podem ler, ouvir e compartilhar esse conteúdo.
+[13/07/2026, 13:33:45] Alvarenga: ‎Você removeu Alvarenga
+[13/07/2026, 13:35:01] EVORA oversight: ‎Você mudou a imagem do grupo
+‎[13/07/2026, 13:35:41] Luiz: Evora Brief Juridico Completo 30Perguntas v3.docx ‎<anexado: 00000004-Evora Brief Juridico Completo 30Perguntas v3.docx>
+‎[13/07/2026, 13:36:17] Luiz: Evora Manual v9_9.md ‎<anexado: 00000005-Evora Manual v9_9.md>
+‎[13/07/2026, 13:36:50] Luiz: Evora Motor Briefing.zip ‎<anexado: 00000006-Evora Motor Briefing.zip>
+‎[13/07/2026, 13:38:08] Luiz: Logo Oficial ‎<anexado: 00000007-PHOTO-2026-07-13-13-38-08.jpg>
+[13/07/2026, 13:38:25] Luiz: logo em
+PNG
+‎[13/07/2026, 13:40:09] Luiz: CLAUDE.md ‎<anexado: 00000009-CLAUDE.md>
+‎[13/07/2026, 13:41:10] Luiz: GUIA Primeiro Briefing.md ‎<anexado: 00000010-GUIA Primeiro Briefing.md>
+‎[13/07/2026, 13:41:39] Luiz: orquestrador evora.py ‎<anexado: 00000011-orquestrador evora.py>
+‎[13/07/2026, 13:42:05] Luiz: perfil tatiane.json ‎<anexado: 00000012-perfil tatiane.json>
+[13/07/2026, 13:42:21] Luiz: perfil da tatiane
+‎[13/07/2026, 13:43:02] Luiz: imprensa coletor evora.py ‎<anexado: 00000014-imprensa coletor evora.py>
+‎[13/07/2026, 13:43:34] Luiz: coletor pncp evora.py ‎<anexado: 00000015-coletor pncp evora.py>
+‎[13/07/2026, 13:44:02] Luiz: montador briefing evora.py ‎<anexado: 00000016-montador briefing evora.py>
+‎[13/07/2026, 13:44:48] Luiz: render briefing evora.py ‎<anexado: 00000017-render briefing evora.py>
+‎[13/07/2026, 13:45:32] Luiz: aprendizado evora.py ‎<anexado: 00000018-aprendizado evora.py>
+‎[13/07/2026, 13:46:40] Luiz: perfil tenant modelo.json ‎<anexado: 00000019-perfil tenant modelo.json>
+‎[13/07/2026, 13:48:02] Luiz: requirements.txt ‎<anexado: 00000020-requirements.txt>
+‎[13/07/2026, 13:49:39] Luiz: LEIA-ME MOTOR.md ‎<anexado: 00000021-LEIA-ME MOTOR.md>
+[13/07/2026, 20:35:41] Luiz: https://claude.ai/public/artifacts/906b65c5-b057-4c17-9295-8f9c5b7968bb
+‎[13/07/2026, 22:08:49] Luiz: Evora Organograma 1a Agentes v1.pdf • ‎3 páginas ‎<anexado: 00000023-Evora Organograma 1a Agentes v1.pdf>
+[13/07/2026, 22:09:10] Luiz: https://claude.ai/public/artifacts/981fee7f-b87c-4ed7-9350-d39bddeb5897
+‎[13/07/2026, 22:12:04] Luiz: Evora Organograma 1a Agentes v1.html ‎<anexado: 00000025-Evora Organograma 1a Agentes v1.html>
+‎[13/07/2026, 22:16:19] Luiz: Evora Organograma 1b Tecnico v1.html ‎<anexado: 00000026-Evora Organograma 1b Tecnico v1.html>
+‎[14/07/2026, 09:00:45] Luiz: Evora Priorizacao Iria v2.docx ‎<anexado: 00000027-Evora Priorizacao Iria v2.docx>
+‎[14/07/2026, 23:31:28] Luiz: CLAUDE setup banco.md ‎<anexado: 00000028-CLAUDE setup banco.md>
+‎[14/07/2026, 23:38:03] Luiz: Evora Diagrama Banco v1.html ‎<anexado: 00000029-Evora Diagrama Banco v1.html>
+‎[15/07/2026, 08:35:06] Luiz: Evora Manual v10_3.md ‎<anexado: 00000030-Evora Manual v10_3.md>
+‎[15/07/2026, 13:56:24] Luiz: Evora Manual v10_3.md ‎<anexado: 00000031-Evora Manual v10_3.md>
+‎[15/07/2026, 14:43:46] Luiz: Evora Dashboard Geral v1.html ‎<anexado: 00000032-Evora Dashboard Geral v1.html>
+‎[15/07/2026, 21:16:18] Luiz: ROTEIRO LAPTOP v1.md ‎<anexado: 00000033-ROTEIRO LAPTOP v1.md>
+[15/07/2026, 21:24:02] Luiz: https://claude.ai/public/artifacts/03bd2589-0d8a-4064-8396-abd3c377b4fa
+‎[15/07/2026, 21:24:16] Luiz: briefing 20260715.html ‎<anexado: 00000035-briefing 20260715.html>
+‎[15/07/2026, 21:40:26] Luiz: briefing 20260715.md ‎<anexado: 00000036-briefing 20260715.md>
+‎[15/07/2026, 21:41:19] Luiz: render briefing evora.py ‎<anexado: 00000037-render briefing evora.py>
+‎[15/07/2026, 21:41:48] Luiz: noticias.json ‎<anexado: 00000038-noticias.json>
+‎[16/07/2026, 07:17:35] Luiz: Evora Anexo Protocolo Acesso Confidencialidade v1.md ‎<anexado: 00000039-Evora Anexo Protocolo Acesso Confidencialidade v1.md>
+‎[16/07/2026, 07:39:14] Luiz: Evora Anexo Seguranca Backup Recuperacao v1.md ‎<anexado: 00000040-Evora Anexo Seguranca Backup Recuperacao v1.md>
+‎[16/07/2026, 07:40:04] Luiz: Evora AIMg Instrucao Trabalho v1.md ‎<anexado: 00000041-Evora AIMg Instrucao Trabalho v1.md>
+‎[16/07/2026, 08:49:22] Luiz: Evora Plano Operacao Total v1.md ‎<anexado: 00000042-Evora Plano Operacao Total v1.md>
+‎[16/07/2026, 08:53:21] Luiz: Evora Manual v10_4.md ‎<anexado: 00000043-Evora Manual v10_4.md>

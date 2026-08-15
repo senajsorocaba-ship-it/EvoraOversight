@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Évora — Organograma 1a: Agentes & Produtos</title>
+<style>
+:root{--navy:#000F40;--navy2:#0a1b4a;--gold:#B5985A;--gold-light:#E4CE97;
+--paper:#F7F5EF;--card:#FBFAF6;--ink:#23272E;--muted:#5B6470;--line:#E6E0D2;
+--gab:#2c5b8f;--gab-bg:#e8f0f8;--camp:#7a4fa0;--camp-bg:#f0e9f7;--gov:#8f7740;--gov-bg:#f5efdf;--seg:#8A2F2F;--seg-bg:#f7e6e5}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5;padding-bottom:50px}
+.serif{font-family:Georgia,"Times New Roman",serif}
+.top{background:var(--navy);color:#fff;padding:18px 22px;text-align:center}
+.top .t{font-family:Georgia,serif;font-size:22px}.top .s{font-size:12px;color:#9fb2cc;margin-top:4px}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px}
+.node{border-radius:12px;padding:12px 16px;text-align:center;font-weight:700;color:#fff;box-shadow:0 3px 10px rgba(0,10,40,.15)}
+.center{display:flex;justify-content:center}
+.connector{width:2px;height:22px;background:var(--gold);margin:0 auto}
+.hbar{height:2px;background:var(--gold);margin:0 auto}
+.lbl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:800;text-align:center;margin:22px 0 10px}
+
+/* topo: autoridade */
+.autoridade{background:linear-gradient(135deg,#1a2e5c,#000F40);border:2px solid var(--gold);max-width:340px}
+.autoridade .r{font-size:11px;color:var(--gold-light);font-weight:600}
+.autoridade .n{font-size:17px;font-family:Georgia,serif}
+
+/* governança */
+.govrow{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:4px}
+.govcard{background:var(--gov-bg);border:1px solid #e0d4b0;border-left:4px solid var(--gov);border-radius:11px;padding:12px 15px;max-width:250px}
+.govcard .s{font-size:12px;font-weight:800;color:var(--gov)}
+.govcard .d{font-size:11.5px;color:var(--muted);margin-top:3px}
+
+/* dois mundos */
+.mundos{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px}
+@media(max-width:800px){.mundos{grid-template-columns:1fr}}
+.mundo{border-radius:14px;padding:16px;border:1px solid var(--line)}
+.mundo.gab{background:var(--gab-bg);border-top:4px solid var(--gab)}
+.mundo.camp{background:var(--camp-bg);border-top:4px solid var(--camp)}
+.mundo .chefe{border-radius:11px;padding:12px;text-align:center;color:#fff;font-weight:800;margin-bottom:6px}
+.mundo.gab .chefe{background:var(--gab)}.mundo.camp .chefe{background:var(--camp)}
+.mundo .chefe .sub{font-size:11px;font-weight:500;opacity:.85;margin-top:2px}
+.agents{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.ag{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:11.5px}
+.ag .sg{font-weight:800;color:var(--navy)}.ag .nm{color:var(--muted);font-size:10.5px;display:block;margin-top:1px}
+.ag.plan{opacity:.6;border-style:dashed}
+.sep{background:var(--vermelho,#b3352f);color:#fff;text-align:center;border-radius:8px;padding:6px;font-size:10.5px;font-weight:700;margin:14px 0;background:#7a2f2f}
+
+/* infraestrutura de apoio */
+.infra{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.infracard{background:#fff;border:1px solid var(--line);border-bottom:3px solid var(--seg);border-radius:11px;padding:11px 14px;max-width:220px}
+.infracard .s{font-size:12px;font-weight:800;color:var(--seg)}
+.infracard .d{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* produtos */
+.prods{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:8px}
+.prod{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.prod .pn{font-family:Georgia,serif;font-size:15px;color:var(--navy)}
+.prod .pr{font-size:11px;color:var(--gold);font-weight:700;margin:3px 0}
+.prod .pd{font-size:11.5px;color:var(--muted)}
+.legenda{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:20px;font-size:11px;color:var(--muted)}
+.legenda span{display:flex;align-items:center;gap:5px}.ld{width:11px;height:11px;border-radius:3px}
+.foot{text-align:center;font-size:11px;color:var(--muted);margin-top:26px}
+</style></head><body>
+<div class="top">
+  <div class="t serif">Organograma 1a — Agentes & Produtos</div>
+  <div class="s">Évora Oversight · estrutura de inteligência · base Manual V10.0 (26 agentes)</div>
+</div>
+<div class="wrap">
+
+  <!-- AUTORIDADE -->
+  <div class="lbl">Topo — quem o sistema serve</div>
+  <div class="center"><div class="node autoridade"><div class="r">AUTORIDADE (TENANT)</div><div class="n serif">Vereadora Tatiane Costa</div><div class="r" style="margin-top:3px">maior alçada · decisão humana sempre</div></div></div>
+  <div class="connector"></div>
+
+  <!-- GOVERNANÇA (acima de Bia/Nil) -->
+  <div class="lbl">Camada de Governança & Trajetória — responde à autoridade, acima das IAs principais</div>
+  <div class="govrow">
+    <div class="govcard"><div class="s">AAS-Évora</div><div class="d">Auditoria Soberana — audita todo o ecossistema, inclusive autoridade e criador. Independente.</div></div>
+    <div class="govcard"><div class="s">AMA-Évora</div><div class="d">Mentor da Autoridade — conselheiro pessoal e sigiloso, fora de Bia/Nil.</div></div>
+    <div class="govcard"><div class="s">AIP</div><div class="d">Inteligência Política — trajetória de longo prazo: postura, discurso, imagem.</div></div>
+  </div>
+  <div class="connector"></div>
+
+  <!-- DOIS MUNDOS -->
+  <div class="lbl">Duas IAs principais — orquestram os especialistas · mundos separados (não se misturam)</div>
+  <div class="mundos">
+    <!-- GABINETE -->
+    <div class="mundo gab">
+      <div class="chefe">BIA — Gestora do Gabinete<div class="sub">mundo Mandato · orquestra 11 especialistas</div></div>
+      <div class="agents">
+        <div class="ag"><span class="sg">AIM-g</span><span class="nm">Inteligência e Monitoramento</span></div>
+        <div class="ag"><span class="sg">AFEx-g</span><span class="nm">Fiscalização do Executivo</span></div>
+        <div class="ag"><span class="sg">ADC-g</span><span class="nm">Demandas Cidadãs</span></div>
+        <div class="ag"><span class="sg">ARI-g</span><span class="nm">Relações Institucionais</span></div>
+        <div class="ag"><span class="sg">AAG-g</span><span class="nm">Agenda</span></div>
+        <div class="ag"><span class="sg">AJG-g</span><span class="nm">Jurídico do Gabinete</span></div>
+        <div class="ag"><span class="sg">APL-g</span><span class="nm">Projetos de Lei</span></div>
+        <div class="ag"><span class="sg">ACN-g</span><span class="nm">Comunicação</span></div>
+        <div class="ag"><span class="sg">AMP-g</span><span class="nm">Mídia e Produção</span></div>
+        <div class="ag"><span class="sg">ADG-g</span><span class="nm">Dados do Gabinete</span></div>
+        <div class="ag"><span class="sg">APG-g</span><span class="nm">Pesquisa do Gabinete</span></div>
+        <div class="ag plan"><span class="sg">AGP-g</span><span class="nm">Gestão de Pessoas (planejado)</span></div>
+      </div>
+    </div>
+    <!-- CAMPANHA -->
+    <div class="mundo camp">
+      <div class="chefe">NIL — Gestor de Campanha<div class="sub">mundo Eleitoral · orquestra 10 especialistas</div></div>
+      <div class="agents">
+        <div class="ag"><span class="sg">AME-p</span><span class="nm">Mobilização Eleitoral</span></div>
+        <div class="ag"><span class="sg">AJE-p</span><span class="nm">Jurídico Eleitoral</span></div>
+        <div class="ag"><span class="sg">ACE-p</span><span class="nm">Comunicação Eleitoral</span></div>
+        <div class="ag"><span class="sg">AIE-p</span><span class="nm">Inteligência Eleitoral</span></div>
+        <div class="ag"><span class="sg">AMC-p</span><span class="nm">Mídia de Campanha</span></div>
+        <div class="ag"><span class="sg">ADE-p</span><span class="nm">Dados Eleitorais</span></div>
+        <div class="ag"><span class="sg">AIA-p</span><span class="nm">Inteligência de Adversários</span></div>
+        <div class="ag"><span class="sg">APE-p</span><span class="nm">Pesquisa Eleitoral</span></div>
+        <div class="ag"><span class="sg">ACC-p</span><span class="nm">Coordenação de Campanha</span></div>
+        <div class="ag"><span class="sg">AFC-p</span><span class="nm">Financeiro de Campanha</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="sep">🔒 SEPARAÇÃO DE MUNDOS — bancos, chaves, permissões e trilhas distintos · virar a chave troca o ambiente, nunca cria ponte</div>
+
+  <!-- INFRAESTRUTURA DE APOIO -->
+  <div class="lbl">Camada de Segurança, Operação & Acervo — transversal, reporta ao ADM Évora</div>
+  <div class="infra">
+    <div class="infracard"><div class="s">SISEC</div><div class="d">Segurança cibernética · Modo Emergência · sub-agentes de acesso, anomalia e resposta.</div></div>
+    <div class="infracard"><div class="s">Aegis</div><div class="d">Cofre soberano de dados (Zero-Knowledge) · custódia, chave por quórum, sucessão (Sigma One).</div></div>
+    <div class="infracard"><div class="s">Veritas</div><div class="d">Acervo legal-normativo · leis, regimento, normas · conformidade contínua.</div></div>
+    <div class="infracard"><div class="s">VRX</div><div class="d">Operações e suporte · manutenção · Porta de Suporte (calibra os agentes) · Painel de Manutenção.</div></div>
+  </div>
+
+  <!-- PRODUTOS -->
+  <div class="lbl">Os cinco produtos da plataforma</div>
+  <div class="prods">
+    <div class="prod"><div class="pn serif">Évora Gabinete</div><div class="pr">conduzido pela Bia</div><div class="pd">Gestão do mandato: briefing, agenda, demandas, projetos, comunicação, fiscalização.</div></div>
+    <div class="prod"><div class="pn serif">Évora Campanha</div><div class="pr">conduzido pelo Nil</div><div class="pd">Trajetória eleitoral: estratégia, pesquisas, narrativa, mobilização, financeiro.</div></div>
+    <div class="prod"><div class="pn serif">Évora Sentinela</div><div class="pr">proteção</div><div class="pd">Segurança da autoridade · 17 módulos (pânico, painel, despacho).</div></div>
+    <div class="prod"><div class="pn serif">Évora Cidadão</div><div class="pr">participação</div><div class="pd">Canal do cidadão (Portas Abertas) · engine ADC-g · sob LGPD.</div></div>
+    <div class="prod"><div class="pn serif">Évora Oversight</div><div class="pr">governança</div><div class="pd">Inteligência, fiscalização, auditoria soberana · a camada que tudo supervisiona.</div></div>
+  </div>
+
+  <div class="legenda">
+    <span><span class="ld" style="background:var(--gov)"></span> Governança</span>
+    <span><span class="ld" style="background:var(--gab)"></span> Gabinete (Bia)</span>
+    <span><span class="ld" style="background:var(--camp)"></span> Campanha (Nil)</span>
+    <span><span class="ld" style="background:var(--seg)"></span> Segurança/Operação</span>
+    <span><span class="ld" style="border:1px dashed var(--muted)"></span> Planejado</span>
+  </div>
+
+  <div class="foot">ÉVORA OVERSIGHT · Organograma 1a (Agentes & Produtos) · base Manual V10.0 · Confidencial<br>Total: 26 agentes ativos = Bia + Nil + 11 gabinete + 10 campanha + 3 governança · AGP-g planejado</div>
+</div>
+</body></html>

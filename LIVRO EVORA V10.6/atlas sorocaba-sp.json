@@ -1,0 +1,262 @@
+{
+ "_versao": "Atlas v1 (arquivo) · Manual v10.6, Anexo 16",
+ "_camada": "COMPARTILHADA da plataforma — fatos públicos sobre a cidade. Nunca guardar aqui dados de tenant (temas, pessoas de interesse, F3).",
+ "municipio": "Sorocaba",
+ "uf": "SP",
+ "slug": "sorocaba-sp",
+ "identificacao": {
+  "codigo_ibge": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "regiao": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "microrregiao": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "populacao": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  }
+ },
+ "executivo": {
+  "prefeito": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "vice": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "cnpj_prefeitura": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "portal": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "secretarias": []
+ },
+ "legislativo": {
+  "num_vereadores": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "presidente_camara": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "composicao_partidaria": [],
+  "portal": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "sistema_tramitacao": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  }
+ },
+ "diario_oficial": {
+  "onde_publica": {
+   "valor": "noticias.sorocaba.sp.gov.br/jornal",
+   "fonte": "Verificação direta do site, 18/07/2026 (edições 3990 de 08/07 e 3991 de 13/07 identificadas)",
+   "selo": "verificado",
+   "data": "20/07/2026"
+  },
+  "formato": {
+   "valor": "PDF (edições numeradas sequencialmente em página WordPress)",
+   "fonte": "Verificação direta do site, 18/07/2026",
+   "selo": "verificado",
+   "data": "20/07/2026"
+  },
+  "plataforma": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "periodicidade": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "conector_com": {
+   "valor": "RMS-001 (especificado no Manual; conector ainda NÃO construído)",
+   "fonte": "Manual Supremo v10.6, seção COM",
+   "selo": "verificado",
+   "data": "20/07/2026"
+  }
+ },
+ "contratacoes": {
+  "cnpjs_pncp": [
+   {
+    "orgao": "Prefeitura de Sorocaba",
+    "cnpj": {
+     "valor": "",
+     "fonte": "",
+     "selo": "a confirmar",
+     "data": ""
+    }
+   }
+  ]
+ },
+ "mapa_politico_factual": {
+  "_regra": "Leitura A (decisão D3): só fato público com fonte — eleitos, votos, partidos, coligações declaradas, presidências. PROIBIDO: inferência de alinhamento. Correlações são pesquisa sob demanda no tenant, nunca cadastro aqui.",
+  "ultima_eleicao_municipal": {
+   "valor": "",
+   "fonte": "",
+   "selo": "a confirmar",
+   "data": ""
+  },
+  "eleitos": []
+ },
+ "midia": {
+  "_regra": "Níveis F1 (CNPJ ativo + CNAE de mídia — identificação) e F2 (cobertura comprovada com evidência arquivada). F3 NUNCA entra no Atlas. CNPJ não mede credibilidade; ausência de CNPJ não descarta fonte. Revalidação semestral do CNPJ.",
+  "veiculos": [
+   {
+    "nome": "Cruzeiro do Sul",
+    "nivel": "F1",
+    "url": "cruzeirodosul.inf.br",
+    "cobertura": "Sorocaba e região",
+    "cnpj": "",
+    "situacao_receita": "",
+    "cnae": "",
+    "cnae_descricao": "",
+    "identificacao": "pendente",
+    "evidencia_cobertura": "",
+    "fonte": "Veículo canônico do Manual v10.6 (decisão do fundador, v9.8); matéria sobre pauta da Câmara verificada em 14/07/2026",
+    "selo": "verificado",
+    "data": "20/07/2026",
+    "proxima_revalidacao_cnpj": ""
+   },
+   {
+    "nome": "Jornal Z Norte — seção Sorocabanices",
+    "nivel": "F1",
+    "url": "",
+    "cobertura": "Sorocaba (zona norte)",
+    "cnpj": "",
+    "situacao_receita": "",
+    "cnae": "",
+    "cnae_descricao": "",
+    "identificacao": "pendente",
+    "evidencia_cobertura": "",
+    "fonte": "Veículo canônico do Manual v10.6 (v9.8)",
+    "selo": "verificado",
+    "data": "20/07/2026",
+    "proxima_revalidacao_cnpj": ""
+   },
+   {
+    "nome": "Jornal Ipanema / IPA Online",
+    "nivel": "F1",
+    "url": "jornalipanema.com.br",
+    "cobertura": "Sorocaba e região",
+    "cnpj": "",
+    "situacao_receita": "",
+    "cnae": "",
+    "cnae_descricao": "",
+    "identificacao": "pendente",
+    "evidencia_cobertura": "",
+    "fonte": "Veículo canônico do Manual v10.6 (v9.8)",
+    "selo": "verificado",
+    "data": "20/07/2026",
+    "proxima_revalidacao_cnpj": ""
+   },
+   {
+    "nome": "Giro Sorocaba",
+    "nivel": "F1",
+    "url": "girosorocaba.com.br",
+    "cobertura": "Sorocaba",
+    "cnpj": "",
+    "situacao_receita": "",
+    "cnae": "",
+    "cnae_descricao": "",
+    "identificacao": "pendente",
+    "evidencia_cobertura": "",
+    "fonte": "Veículo canônico do Manual v10.6 (v9.8)",
+    "selo": "verificado",
+    "data": "20/07/2026",
+    "proxima_revalidacao_cnpj": ""
+   },
+   {
+    "nome": "Portal Porque",
+    "nivel": "F1",
+    "url": "portalporque.com.br",
+    "cobertura": "Sorocaba",
+    "cnpj": "",
+    "situacao_receita": "",
+    "cnae": "",
+    "cnae_descricao": "",
+    "identificacao": "pendente",
+    "evidencia_cobertura": "",
+    "fonte": "Veículo canônico do Manual v10.6 (v9.8); reportagens de fiscalização de contratos verificadas (17/04/2025)",
+    "selo": "verificado",
+    "data": "20/07/2026",
+    "proxima_revalidacao_cnpj": ""
+   },
+   {
+    "nome": "Revista Oeste",
+    "nivel": "F2",
+    "url": "revistaoeste.com",
+    "cobertura": "nacional; cobre pautas de Sorocaba",
+    "cnpj": "",
+    "situacao_receita": "",
+    "cnae": "",
+    "cnae_descricao": "",
+    "identificacao": "pendente",
+    "evidencia_cobertura": "Matéria sobre aprovação de projeto de autoria da vereadora Tatiane Costa na Câmara de Sorocaba, votação de 07/07/2026 (verificada em 18/07/2026)",
+    "fonte": "Busca verificada em 18/07/2026",
+    "selo": "verificado",
+    "data": "20/07/2026",
+    "proxima_revalidacao_cnpj": ""
+   }
+  ]
+ },
+ "_trilha": [
+  {
+   "data": "20/07/2026",
+   "acao": "semeadura do esqueleto",
+   "autor": "atlas_municipal.py",
+   "obs": "tudo 'a confirmar'"
+  },
+  {
+   "data": "19/07/2026",
+   "acao": "semeadura inicial com dados verificados na sessão de consolidação v10.5/v10.6",
+   "autor": "sessão de trabalho fundador + Claude",
+   "obs": "5 veículos F1 canônicos + 1 F2 com evidência; DO verificado; CNPJs pendentes de consulta à Receita"
+  }
+ ],
+ "_pendencias_go_live": [
+  "Verificação humana da mídia local (obrigatória — decisão D6)",
+  "Confirmar plataforma do Diário Oficial e conector COM correspondente",
+  "Preencher CNPJs dos órgãos para o PNCP"
+ ]
+}

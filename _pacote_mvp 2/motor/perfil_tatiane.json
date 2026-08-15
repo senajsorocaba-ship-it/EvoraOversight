@@ -1,0 +1,125 @@
+{
+ "tenant": "tatiane-costa-sorocaba",
+ "autoridade": {
+  "nome": "Tatiane Costa",
+  "variacoes_nome": [
+   "Tatiane Costa",
+   "Tati Costa",
+   "Vereadora Tati",
+   "Vereadora Tatiane",
+   "Vereadora Tati Costa",
+   "Vereadora Tatiane de Sorocaba",
+   "Ver. Tatiane Costa",
+   "Tatiane",
+   "Gabinete 6 (Câmara de Sorocaba)"
+  ],
+  "cargo_atual": "Vereadora",
+  "municipio": "Sorocaba",
+  "uf": "SP",
+  "partido": "PL",
+  "pre_candidatura_2026": "Deputada Federal"
+ },
+ "briefing": {
+  "horario": "06:45",
+  "fuso": "America/Sao_Paulo",
+  "tom": "factual, conciso, respeitoso; sem opinião pessoal nem recomendação de voto",
+  "blocos": [
+   "Resumo do dia",
+   "Radar de Nomeações (AFEx-g)",
+   "Fiscalização do Executivo (limiar 25%)",
+   "Pulso da Câmara / Diário Oficial",
+   "Demandas & Requerimentos",
+   "Monitoramento & Imprensa (5 jornais)",
+   "Movimento sugerido (72h)"
+  ],
+  "carater": "Cláusula de Caráter Travado: sem invenção; fonte declarada em tudo (CVI); 'não sei' é válido; nada não-ordenado; freio humano (nada é executado sem aprovação)."
+ },
+ "monitoramento": {
+  "politicos_pessoas": [
+   "Tatiane Costa (a autoridade)",
+   "Flávio Bolsonaro"
+  ],
+  "orgaos": [
+   "Prefeitura de Sorocaba",
+   "Câmara de Sorocaba"
+  ],
+  "temas": [
+   "Cultura",
+   "Educação",
+   "Segurança Pública",
+   "Proteção à Mulher",
+   "Leis sobre misoginia"
+  ],
+  "veiculos": [
+   "Cruzeiro do Sul (cruzeirodosul.inf.br)",
+   "Jornal Z Norte — seção Sorocabanices",
+   "Jornal Ipanema / IPA Online (jornalipanema.com.br)",
+   "Giro Sorocaba (girosorocaba.com.br)",
+   "Portal Porque (portalporque.com.br)",
+   "Jornal do Município (via COM)"
+  ],
+  "internacional_foco": [
+   "Relação Brasil-EUA",
+   "Família Bolsonaro nos EUA + reflexos nas eleições 2026"
+  ],
+  "posicionamento": "Monitorar falas e casos (Câmara e redes) sobre proteção à mulher e misoginia que exijam posicionamento — só fonte pública, decisão humana.",
+  "mencoes": {
+   "imprensa": true,
+   "redes_sociais": [
+    "Instagram",
+    "Facebook",
+    "X",
+    "TikTok"
+   ],
+   "nota": "Redes: escopo decidido; ferramenta de coleta [PENDENTE]"
+  },
+  "veiculos_nacionais": [
+   "Globo/G1",
+   "GloboNews (texto)",
+   "Record News (texto)"
+  ]
+ },
+ "fiscalizacao": {
+  "ambito": "municipal",
+  "fontes": [
+   "Diário Oficial de Sorocaba — noticias.sorocaba.sp.gov.br/jornal (PDF, via COM RMS-001)",
+   "PNCP"
+  ],
+  "limiar_desvio": 0.3,
+  "regra": "indício para verificação humana; nunca acusação; base de comparação sempre declarada",
+  "radar_nomeacoes": "Diário: nomeações e exonerações (nome, cargo, secretaria) + cruzamento com pessoas de interesse. Indício, nunca acusação.",
+  "limiar_desvio_pct": 25,
+  "limiar_nota": "Ajustável de forma simples por qualquer assessor (dashboard/aba AFEx-g ou por voz à Bia); mudança registrada na trilha.",
+  "ajustavel": "Qualquer assessor no dashboard (aba AFEx-g) ou por voz à Bia; muda na trilha."
+ },
+ "travas": {
+  "freio_humano": true,
+  "fontes_publicas_e_licitas": true,
+  "lgpd_termo_demandas": "obrigatório desde o dia 1",
+  "separacao_gabinete_campanha": true
+ },
+ "fontes": {
+  "porta_de_entrada": "Qualquer assessor solicita nova fonte na caixa; vai automaticamente a quem tem alçada; entra como 'nova/a validar' até a autoridade confirmar. Trilha imutável.",
+  "veiculos_canonicos": {
+   "locais": [
+    "Cruzeiro do Sul (online)",
+    "Jornal Z Norte — seção Sorocabanices",
+    "Jornal do Município (via COM RMS-001)"
+   ],
+   "nacionais": [
+    "Globo/G1",
+    "GloboNews (texto do portal)",
+    "Record News (texto do portal)"
+   ],
+   "regra": "Inclusão livre por qualquer assessor (funciona na hora; aviso a todos via GEC/Mural; sensíveis pedem ok da autoridade; API -> VRX). Exclusão SOMENTE com alçada: qualquer um pede, quem tem alçada recebe o pedido no sistema e executa com justificativa. Fonte sempre identificada (CVI)."
+  }
+ },
+ "agenda": {
+  "decisao": "Agenda vive no Évora (calendário próprio); funciona offline (local) se a internet cair; sincroniza ao voltar. Migração a partir do Google Agenda na implantação."
+ },
+ "diario_oficial": {
+  "fonte": "noticias.sorocaba.sp.gov.br/jornal (PDF, edições numeradas — via COM RMS-001)",
+  "nota": "Separar atos oficiais (nomeações/exonerações/contratos) das notícias."
+ },
+ "_versao_perfil": "v9.9 · alinhado ao manual (5 jornais, limiar 25%, DO via COM, caráter travado)"
+}

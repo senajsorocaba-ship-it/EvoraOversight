@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Évora — Diagrama do Banco de Dados (MVP)</title>
+<style>
+:root{--navy:#000F40;--gold:#B5985A;--gold-light:#E4CE97;--paper:#F7F5EF;--card:#FBFAF6;--ink:#23272E;--muted:#5B6470;--line:#E6E0D2;
+--core:#2c5b8f;--core-bg:#e8f0f8;--lgpd:#8A2F2F;--lgpd-bg:#f7e6e5;--audit:#8f7740;--audit-bg:#f5efdf}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5;padding-bottom:50px}
+.serif{font-family:Georgia,"Times New Roman",serif}
+.top{background:var(--navy);color:#fff;padding:18px 22px;text-align:center}
+.top .t{font-family:Georgia,serif;font-size:22px}.top .s{font-size:12px;color:#9fb2cc;margin-top:4px}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px}
+.intro{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:10px;padding:14px 16px;font-size:13px;color:#3f4651;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.tbl{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tbl.core{border-top:4px solid var(--core)}
+.tbl.lgpd{border-top:4px solid var(--lgpd)}
+.tbl.audit{border-top:4px solid var(--audit)}
+.th{padding:11px 14px;font-family:Georgia,serif;font-size:15px;display:flex;align-items:center;gap:8px}
+.tbl.core .th{background:var(--core-bg);color:var(--core)}
+.tbl.lgpd .th{background:var(--lgpd-bg);color:var(--lgpd)}
+.tbl.audit .th{background:var(--audit-bg);color:var(--audit)}
+.th .badge{margin-left:auto;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;opacity:.8}
+.cols{padding:6px 0}
+.col{display:flex;gap:8px;padding:5px 14px;font-size:12px;border-bottom:1px solid #f2eee3}
+.col:last-child{border-bottom:none}
+.col .k{font-weight:700;color:var(--navy);min-width:120px}
+.col .t{color:var(--muted);font-size:11px}
+.col.pk .k::before{content:"🔑 ";}
+.col.fk .k::before{content:"🔗 ";}
+.col.sep{background:#fffdf5}
+.col.sep .k::after{content:" ⚑";color:var(--gold)}
+.leg{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin:22px 0;font-size:11.5px;color:var(--muted)}
+.leg span{display:flex;align-items:center;gap:6px}.ld{width:12px;height:12px;border-radius:3px}
+.sep-note{background:var(--navy);color:#fff;border-radius:12px;padding:16px 18px;margin-top:22px}
+.sep-note b{color:var(--gold-light)}
+.foot{text-align:center;font-size:11px;color:var(--muted);margin-top:24px}
+</style></head><body>
+<div class="top">
+  <div class="t serif">Diagrama do Banco de Dados — Núcleo do MVP</div>
+  <div class="s">Évora Oversight · 12 tabelas · preparado para os dois níveis de separação · base Manual v10.1</div>
+</div>
+<div class="wrap">
+  <div class="intro">Este é o mapa de onde cada informação do Évora vai morar. Cada caixa é uma tabela (uma "planilha" no banco); cada linha é um campo. O símbolo <b>⚑</b> marca os campos que garantem a <b>separação de mundos</b> (tenant + mundo) — presentes em quase tudo. É isso que torna impossível um dado de campanha aparecer no gabinete.</div>
+
+  <div class="grid">
+    <!-- TENANTS -->
+    <div class="tbl core"><div class="th">tenants <span class="badge">clientes</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span><span class="t">identificador</span></div>
+      <div class="col"><span class="k">nome</span><span class="t">ex.: Gabinete Tatiane</span></div>
+      <div class="col"><span class="k">municipio / uf</span><span class="t">Sorocaba / SP</span></div>
+      <div class="col sep"><span class="k">nivel_separacao</span><span class="t">logico ou fisico (a chave!)</span></div>
+      <div class="col"><span class="k">regiao_dados</span><span class="t">br = dados no Brasil</span></div>
+    </div></div>
+
+    <!-- USUÁRIOS -->
+    <div class="tbl core"><div class="th">usuarios <span class="badge">quem acessa</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk sep"><span class="k">tenant_id</span><span class="t">de qual cliente</span></div>
+      <div class="col"><span class="k">nome / email</span></div>
+      <div class="col"><span class="k">papel</span><span class="t">autoridade, chefe, jurídico…</span></div>
+      <div class="col"><span class="k">nivel_acesso</span><span class="t">N1 a N5 (alçada)</span></div>
+      <div class="col"><span class="k">ativo</span><span class="t">exoneração encerra acesso</span></div>
+    </div></div>
+
+    <!-- FONTES -->
+    <div class="tbl core"><div class="th">fontes <span class="badge">Central de Fontes</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk sep"><span class="k">tenant_id</span></div>
+      <div class="col sep"><span class="k">mundo</span><span class="t">gabinete ou campanha</span></div>
+      <div class="col"><span class="k">nome / url</span></div>
+      <div class="col"><span class="k">categoria / esfera</span><span class="t">jornal, DO… / municipal…</span></div>
+      <div class="col"><span class="k">palavras_chave</span></div>
+      <div class="col"><span class="k">ativa</span><span class="t">soft delete (desativa)</span></div>
+    </div></div>
+
+    <!-- BRIEFINGS -->
+    <div class="tbl core"><div class="th">briefings <span class="badge">o motor gera</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk sep"><span class="k">tenant_id</span></div>
+      <div class="col sep"><span class="k">mundo</span></div>
+      <div class="col"><span class="k">data_ref</span><span class="t">o dia</span></div>
+      <div class="col"><span class="k">conteudo_md</span><span class="t">o briefing</span></div>
+      <div class="col"><span class="k">fontes_ok / falha</span><span class="t">honestidade: o que respondeu</span></div>
+    </div></div>
+
+    <!-- DEMANDAS -->
+    <div class="tbl lgpd"><div class="th">demandas <span class="badge">LGPD</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk sep"><span class="k">tenant_id</span></div>
+      <div class="col sep"><span class="k">mundo</span></div>
+      <div class="col"><span class="k">assunto / descricao</span></div>
+      <div class="col"><span class="k">cidadao_nome</span><span class="t">dado pessoal</span></div>
+      <div class="col"><span class="k">cidadao_contato</span></div>
+      <div class="col"><span class="k">local / foto</span><span class="t">GPS, imagem</span></div>
+      <div class="col"><span class="k">consentimento_*</span><span class="t">aguarda perguntas 8 e 9</span></div>
+      <div class="col"><span class="k">base_legal</span><span class="t">consentimento/interesse</span></div>
+      <div class="col"><span class="k">retencao_ate</span><span class="t">quando descartar</span></div>
+    </div></div>
+
+    <!-- LUGARES -->
+    <div class="tbl core"><div class="th">lugares <span class="badge">apelido→endereço</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk sep"><span class="k">tenant_id</span></div>
+      <div class="col"><span class="k">apelido</span><span class="t">ex.: Gabinete</span></div>
+      <div class="col"><span class="k">endereco</span><span class="t">o endereço real → Maps/Waze</span></div>
+    </div></div>
+
+    <!-- COMPROMISSOS -->
+    <div class="tbl core"><div class="th">compromissos <span class="badge">Agenda</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk sep"><span class="k">tenant_id</span></div>
+      <div class="col sep"><span class="k">mundo</span></div>
+      <div class="col fk"><span class="k">caixa_de</span><span class="t">de quem é a caixa</span></div>
+      <div class="col"><span class="k">assunto / com_quem / pautas</span></div>
+      <div class="col"><span class="k">quando / local</span></div>
+      <div class="col"><span class="k">status</span><span class="t">aguardando→confirmado…</span></div>
+      <div class="col"><span class="k">prazo_decisao</span><span class="t">semáforo</span></div>
+      <div class="col fk"><span class="k">anotado_por</span></div>
+    </div></div>
+
+    <!-- ATAS -->
+    <div class="tbl core"><div class="th">atas <span class="badge">reunião</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk sep"><span class="k">tenant_id</span></div>
+      <div class="col sep"><span class="k">mundo</span></div>
+      <div class="col fk"><span class="k">compromisso_id</span><span class="t">de qual reunião</span></div>
+      <div class="col"><span class="k">titulo / decisoes</span></div>
+      <div class="col"><span class="k">audio_url</span><span class="t">fase avançada (LGPD)</span></div>
+    </div></div>
+
+    <!-- DESDOBRAMENTOS -->
+    <div class="tbl core"><div class="th">desdobramentos <span class="badge">Seguimentos</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk sep"><span class="k">tenant_id</span></div>
+      <div class="col sep"><span class="k">mundo</span></div>
+      <div class="col fk"><span class="k">ata_id</span></div>
+      <div class="col"><span class="k">tipo</span><span class="t">ação/agendamento/andamento</span></div>
+      <div class="col"><span class="k">texto</span></div>
+      <div class="col fk"><span class="k">dono</span><span class="t">responsável</span></div>
+      <div class="col"><span class="k">prazo / status</span></div>
+      <div class="col"><span class="k">restrito</span><span class="t">tenant+chefe (de fábrica)</span></div>
+    </div></div>
+
+    <!-- EVENTOS -->
+    <div class="tbl core"><div class="th">desdobramento_eventos <span class="badge">linha do tempo</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk"><span class="k">desdobramento_id</span></div>
+      <div class="col"><span class="k">evento</span><span class="t">criado/transferido/concluído</span></div>
+      <div class="col"><span class="k">detalhe</span><span class="t">"de X para Y no ponto…"</span></div>
+      <div class="col fk"><span class="k">por / em</span></div>
+    </div></div>
+
+    <!-- AUDITORIA -->
+    <div class="tbl audit"><div class="th">auditoria <span class="badge">Aegis · imutável</span></div><div class="cols">
+      <div class="col pk"><span class="k">id</span></div>
+      <div class="col fk sep"><span class="k">tenant_id</span></div>
+      <div class="col sep"><span class="k">mundo</span></div>
+      <div class="col fk"><span class="k">usuario_id</span></div>
+      <div class="col"><span class="k">acao / entidade</span><span class="t">o que fez, em quê</span></div>
+      <div class="col"><span class="k">valor_antes/depois</span><span class="t">o que mudou</span></div>
+      <div class="col"><span class="k">ip / sessao</span></div>
+      <div class="col"><span class="k">em</span><span class="t">quando · SÓ INSERT</span></div>
+    </div></div>
+  </div>
+
+  <div class="leg">
+    <span><span class="ld" style="background:var(--core)"></span> Núcleo operacional</span>
+    <span><span class="ld" style="background:var(--lgpd)"></span> Dado pessoal (LGPD)</span>
+    <span><span class="ld" style="background:var(--audit)"></span> Auditoria (imutável)</span>
+    <span>⚑ campos da separação de mundos</span>
+    <span>🔑 chave · 🔗 ligação</span>
+  </div>
+
+  <div class="sep-note">
+    <b>🔒 Como este desenho garante a separação (o seu argumento de venda):</b><br>
+    Todas as tabelas de conteúdo carregam <b>tenant_id</b> (de qual cliente) e <b>mundo</b> (gabinete ou campanha). Uma trava no banco (RLS — Row-Level Security) usa esses dois campos para <b>recusar, na raiz</b>, qualquer tentativa de ler dado de outro cliente ou de outro mundo — mesmo que o programa erre. Essa é a <b>separação Nível 1 (lógica)</b>, padrão dos bancos. Para o cliente que exige o máximo, o campo <b>nivel_separacao = fisico</b> na tabela tenants aciona a <b>separação Nível 2</b>: o mesmo desenho roda numa infraestrutura fisicamente separada. Um desenho, dois níveis — a "chave" que só o Évora oferece.
+  </div>
+
+  <div class="foot">ÉVORA OVERSIGHT · Diagrama do Banco (Núcleo MVP) v1 · arquivos: evora_schema_mvp_v1.sql + evora_rls_mvp_v1.sql · Confidencial</div>
+</div>
+</body></html>

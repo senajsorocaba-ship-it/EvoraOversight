@@ -1,0 +1,5 @@
+select
+  (select count(*) from information_schema.tables
+     where table_schema='public') as tabelas,
+  (select count(*) from pg_policies
+     where schemaname='public') as politicas;
