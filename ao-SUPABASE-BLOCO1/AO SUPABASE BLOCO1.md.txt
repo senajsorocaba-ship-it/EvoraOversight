@@ -160,15 +160,15 @@ create table if not exists briefings (
   blocos             jsonb not null default '[]'::jsonb,  -- os 7 blocos canônicos
   markdown           text,
   html               text,
-  aprovado_por       uuid references usuarios(id),        -- FREIO HUMANO
-  aprovado_em        timestamptz,
+  ciencia_por        uuid references usuarios(id),        -- FREIO HUMANO (Manual v10.8: leitura não exige aprovação prévia; ciência, sim, antes de qualquer ato externo)
+  ciencia_em         timestamptz,
   modelo_ia          text,
   custo_estimado     numeric(10,4),
   ativo              boolean not null default true,
   unique (tenant_id, mundo, data_referencia)
 );
 
-comment on column briefings.aprovado_por is 'Freio humano: briefing sem aprovação não deve ser entregue.';
+comment on column briefings.ciencia_por is 'Freio humano (v10.8): ciência de quem tem alcada_aprovacao, exigida antes de qualquer ato de efeito externo — não antes da leitura, que já chega às 06:45. Validado por trigger em evora_rls_mvp_v1.sql (BLOCO 2), que também define as funções de leitura do JWT usadas ali.';
 
 -- ---------------------------------------------------------------------
 -- 5. DEMANDAS — pedidos do cidadão (módulo com gatilho LGPD)

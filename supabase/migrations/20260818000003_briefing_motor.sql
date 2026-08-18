@@ -154,7 +154,7 @@ begin
   -- Candidatos reais a virarem sugestão de movimento: desdobramentos
   -- prestes a vencer e compromissos ainda não confirmados nos próximos
   -- 3 dias. Nada aqui sai sozinho — depende de aprovação humana
-  -- (briefings.aprovado_por), como em qualquer bloco deste tipo.
+  -- (briefings.ciencia_por), como em qualquer bloco deste tipo.
   with alvo as (
     select 'desdobramento'::text as tipo, id, titulo,
            prazo::text as quando, status::text as detalhe
@@ -236,7 +236,7 @@ comment on function evora_montar_blocos_briefing is
 -- ---------------------------------------------------------------------
 -- 2. GERADOR — chama o agregador, grava/atualiza a linha em `briefings`
 --    e registra a geração na trilha imutável (Anexo 12, passo 9: "entregar
---    à Bia e gravar na trilha"). Não mexe em markdown/html/aprovado_por —
+--    à Bia e gravar na trilha"). Não mexe em markdown/html/ciencia_por —
 --    isso é a etapa seguinte (redação por IA + freio humano), fora deste
 --    BLOCO SQL.
 -- ---------------------------------------------------------------------
@@ -307,5 +307,5 @@ grant execute on function evora_gerar_briefing_diario(uuid, evora_mundo, date)  
 -- job equivalente ao motor Python) que chama evora_gerar_briefing_diario
 -- com a service_role key, pega o jsonb salvo, chama o modelo de IA para
 -- redigir markdown/html a partir dele — e não libera nada sem
--- briefings.aprovado_por preenchido (freio humano).
+-- briefings.ciencia_por preenchido (freio humano, v10.8: exigido antes de ato externo, não antes da leitura).
 -- =====================================================================

@@ -29,9 +29,10 @@ O QUE ESTE SCRIPT FAZ, EM ORDEM:
      como "sem registro hoje", nunca preenchidos por suposição.
   4. Renderiza o markdown em HTML e grava markdown/html/modelo_ia/custo_estimado
      de volta na MESMA linha (UPDATE, não INSERT — não cria duplicata).
-  5. NÃO aprova nem entrega nada: `aprovado_por`/`aprovado_em`/`entregue_em`
-     ficam como estavam. O freio humano continua sendo uma ação humana na
-     aplicação, fora deste script.
+  5. NÃO dá ciência nem entrega nada: `ciencia_por`/`ciencia_em`/`entregue_em`
+     ficam como estavam (v10.8: a leitura chega às 06:45 sem isso; ciência é
+     exigida só antes de qualquer ato de efeito externo). O freio humano
+     continua sendo uma ação humana na aplicação, fora deste script.
 
 SEGURANÇA — LEIA ANTES DE RODAR:
   · A service_role key do Supabase IGNORA o RLS. Este script só pode rodar em
@@ -412,8 +413,8 @@ def main():
         print(f"    bloco {b['ordem']} {b['titulo']:<24} status={b['status']}")
     print("=" * 64)
     print(
-        "⚠ FREIO HUMANO: aprovado_por/aprovado_em NÃO foram preenchidos por este "
-        "script. Nada deve ser entregue à autoridade até que um usuário com "
+        "⚠ FREIO HUMANO: ciencia_por/ciencia_em NÃO foram preenchidos por este "
+        "script. Nenhum ato de efeito externo deve ocorrer até que um usuário com "
         "alçada_aprovacao aprove este briefing na aplicação."
     )
 
