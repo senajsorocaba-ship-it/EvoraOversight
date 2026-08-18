@@ -1,0 +1,14 @@
+# Segredos — nunca commitar
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Artefatos gerados pelo motor/ (briefings, coletas do dia, avisos) —
+# são saída, não código-fonte
+motor/noticias.json
+motor/contratos_sorocaba.json
+motor/briefing_*.md
+motor/briefing_*.html
+motor/avisos_evora.log
