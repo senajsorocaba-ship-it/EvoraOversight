@@ -1,3 +1,6 @@
+-- Espelho gerado de: ao-SUPABASE-BLOCO1/evora rls mvp v1.sql (BLOCO 2 - RLS)
+-- NAO EDITAR AQUI. Editar o arquivo canonico acima e copiar de novo.
+
 -- =====================================================================
 -- ÉVORA OVERSIGHT — SEGURANÇA DE ISOLAMENTO (RLS)
 -- Arquivo: evora_rls_mvp_v1.sql
