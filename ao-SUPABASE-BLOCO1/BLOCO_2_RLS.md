@@ -3,7 +3,9 @@
 **Cole no SQL Editor do Supabase e rode.**
 Copie apenas o que está **dentro** do bloco abaixo — não copie esta linha nem as crases.
 
-**Esperado:** 13 políticas criadas · 11 tabelas com isolamento forçado.
+**Esperado:** 13 políticas criadas · 11 tabelas com isolamento forçado · GRANTs de
+tabela para `authenticated`/`service_role` aplicados (sem isso a Data API nega tudo
+com "permission denied", mesmo com a RLS certa — é bloqueador, não é detalhe).
 Avisos com `NOTICE ... does not exist, skipping` são normais.
 Erro em vermelho: pare e me chame.
 
@@ -123,6 +125,36 @@ alter table atas                  force row level security;
 alter table desdobramentos        force row level security;
 alter table desdobramento_eventos force row level security;
 alter table auditoria             force row level security;
+
+-- ---------------------------------------------------------------------
+-- GRANTS DE TABELA — obrigatório para a Data API (PostgREST) enxergar a
+-- tabela, ANTES mesmo da RLS entrar em jogo.
+--
+-- Supabase parou de expor automaticamente tabelas novas do schema `public`
+-- para as roles da Data API (anon/authenticated/service_role) sem GRANT
+-- explícito — é o comportamento padrão atual, tanto local (CLI) quanto na
+-- nuvem. Sem isto, toda chamada via PostgREST devolve "permission denied
+-- for table X" (código 42501) mesmo com policy de RLS correta, porque o
+-- Postgres nega no nível de privilégio da tabela antes de a RLS ser
+-- avaliada. Detectado rodando este bloco contra o Supabase local de verdade
+-- (supabase start) — não aparece testando só com `set role` no SQL Editor.
+--
+-- Princípio do menor privilégio na concessão de tabela (a RLS acima ainda
+-- é quem decide QUAIS LINHAS, isto aqui só decide quais OPERAÇÕES a role
+-- pode tentar): sem DELETE para `authenticated` em nenhuma tabela — o
+-- Manual já estabelece "nada é deletado", soft delete via ativo/ativa.
+-- `anon` não recebe nada — todo o produto exige login (Princípio de falha
+-- fechada já documentado acima).
+grant select, insert, update on usuarios, fontes, briefings, demandas,
+  lugares, compromissos, atas, desdobramentos, desdobramento_eventos
+  to authenticated;
+grant select on tenants to authenticated;         -- só leitura do próprio; update é sempre 'false' na policy
+grant select, insert on auditoria to authenticated;  -- imutável: sem update/delete de propósito (ver seção 11)
+
+-- service_role ignora RLS por design (ver nota no topo deste arquivo) — o
+-- motor do briefing e outros jobs de servidor precisam de acesso irrestrito
+-- às 11 tabelas, então aqui a concessão é total, não por operação.
+grant all privileges on all tables in schema public to service_role;
 
 -- ---------------------------------------------------------------------
 -- 1. TENANTS — cada um enxerga apenas o próprio registro
