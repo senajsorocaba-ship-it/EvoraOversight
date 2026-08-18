@@ -91,6 +91,8 @@ alter table atas                  enable row level security;
 alter table desdobramentos        enable row level security;
 alter table desdobramento_eventos enable row level security;
 alter table auditoria             enable row level security;
+alter table achados_fiscalizacao  enable row level security;
+alter table mencoes_imprensa      enable row level security;
 
 -- Força o RLS inclusive para o dono das tabelas (defesa em profundidade)
 alter table tenants               force row level security;
@@ -129,10 +131,11 @@ grant select, insert, update on usuarios, fontes, briefings, demandas,
   to authenticated;
 grant select on tenants to authenticated;         -- só leitura do próprio; update é sempre 'false' na policy
 grant select, insert on auditoria to authenticated;  -- imutável: sem update/delete de propósito (ver seção 11)
+grant select on achados_fiscalizacao, mencoes_imprensa to authenticated;  -- só leitura: quem escreve é a ingestão (service_role), não o usuário
 
 -- service_role ignora RLS por design (ver nota no topo deste arquivo) — o
 -- motor do briefing e outros jobs de servidor precisam de acesso irrestrito
--- às 11 tabelas, então aqui a concessão é total, não por operação.
+-- às 13 tabelas, então aqui a concessão é total, não por operação.
 grant all privileges on all tables in schema public to service_role;
 
 -- ---------------------------------------------------------------------
@@ -251,7 +254,27 @@ create policy auditoria_insercao on auditoria
 -- camadas independentes garantindo a imutabilidade da trilha.
 
 -- ---------------------------------------------------------------------
--- 12. FREIO HUMANO (v10.8) — só quem tem alcada_aprovacao dá ciência,
+-- 12/13. ACHADOS_FISCALIZACAO / MENCOES_IMPRENSA (Fase 6) — só SELECT
+-- para authenticated (grant já reflete isso); quem escreve é a ingestão
+-- via service_role, que ignora RLS. Mesmo padrão tenant+mundo das demais
+-- tabelas de conteúdo.
+-- ---------------------------------------------------------------------
+drop policy if exists achados_fiscalizacao_isolamento on achados_fiscalizacao;
+create policy achados_fiscalizacao_isolamento on achados_fiscalizacao
+  for select using (
+        tenant_id = evora_tenant_atual()
+    and (mundo = evora_mundo_atual() or evora_ve_os_dois_mundos())
+  );
+
+drop policy if exists mencoes_imprensa_isolamento on mencoes_imprensa;
+create policy mencoes_imprensa_isolamento on mencoes_imprensa
+  for select using (
+        tenant_id = evora_tenant_atual()
+    and (mundo = evora_mundo_atual() or evora_ve_os_dois_mundos())
+  );
+
+-- ---------------------------------------------------------------------
+-- 14. FREIO HUMANO (v10.8) — só quem tem alcada_aprovacao dá ciência,
 -- só de si mesmo, timestamp sempre do servidor.
 --
 -- A policy briefings_isolamento (seção 3) já libera UPDATE em qualquer
