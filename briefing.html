@@ -1,0 +1,145 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Évora — Briefing Matinal</title>
+<style>
+:root{--navy:#213A5C;--gold:#B5985A;--goldl:#d8c08a;--cream:#F4F1EA;--paper:#FBFAF6;--ink:#23272e;--mut:#5b6470;--line:#E4DED1;--green:#2f6b46;--amber:#9a6b15}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--cream);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55}
+.wrap{max-width:640px;margin:0 auto;padding-bottom:60px}
+.top{background:var(--navy);color:#fff;padding:18px 20px;display:flex;align-items:center;gap:12px}
+.back{color:var(--goldl);text-decoration:none;font-size:13px;font-weight:700}
+.btitle{font-family:Georgia,serif;font-size:20px;flex:1}
+.block{margin:16px 16px 0;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.block h2{font-family:Georgia,serif;font-size:15px;color:var(--navy);margin:0 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.status{font-size:9.5px;font-weight:800;text-transform:uppercase;border-radius:5px;padding:2px 7px;flex:none;align-self:center}
+.status.preenchido{background:#E7F0E9;color:var(--green)}
+.status.pendente{background:#FBF1DE;color:var(--amber)}
+.status.parcial{background:#E7EEF5;color:#2b5478}
+.aviso{font-size:12px;color:var(--mut);font-style:italic;margin-bottom:6px}
+ul{margin:2px 0 0 18px}li{font-size:13.5px;margin:4px 0}
+.ciencia{margin:20px 16px;background:var(--paper);border:2px solid var(--gold);border-radius:9px;padding:16px}
+.ciencia h3{font-family:Georgia,serif;font-size:15px;color:var(--navy);margin-bottom:6px}
+.ciencia p{font-size:13px;color:var(--mut);margin-bottom:12px}
+.ciencia button{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer}
+.ciencia button:disabled{opacity:.5;cursor:default}
+.ciencia .ok{color:var(--green);font-weight:700;font-size:13.5px}
+.msg{margin:16px;font-size:13px;color:var(--mut);text-align:center}
+.err{color:#9d3535}
+</style></head><body>
+<div class="wrap">
+  <div class="top"><a class="back" href="Evora Dashboard Castelo v8_4.html">‹ Voltar</a><div class="btitle">Briefing Matinal</div></div>
+  <div id="conteudo" class="msg">Carregando…</div>
+</div>
+<script>
+const EVORA_SUPABASE = {
+  url: "http://127.0.0.1:54321",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+};
+
+const sessao = JSON.parse(localStorage.getItem("evora_session") || "null");
+if (!sessao || !sessao.access_token || Date.now() >= sessao.expires_at) {
+  localStorage.removeItem("evora_session");
+  location.href = "login.html";
+}
+
+// Só para decidir o que MOSTRAR na tela (ex.: exibir ou não o botão).
+// A garantia de verdade é a trigger evora_valida_ciencia_briefing() no
+// banco — mesmo que alguém adultere esta tela, o PATCH é rejeitado lá.
+function decodificarSub(jwt) {
+  const payload = JSON.parse(atob(jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+  return payload.sub;
+}
+
+async function evoraRest(caminho, opcoes = {}) {
+  const resp = await fetch(EVORA_SUPABASE.url + "/rest/v1/" + caminho, {
+    ...opcoes,
+    headers: {
+      apikey: EVORA_SUPABASE.anonKey,
+      Authorization: "Bearer " + sessao.access_token,
+      "Content-Type": "application/json",
+      ...(opcoes.headers || {})
+    }
+  });
+  if (resp.status === 401) { localStorage.removeItem("evora_session"); location.href = "login.html"; return null; }
+  return resp;
+}
+
+const STATUS_CLASSE = {
+  preenchido: "preenchido",
+  parcial_fontes_declaradas: "parcial",
+  pendente_integracao_externa: "pendente",
+  sem_dado_hoje: "pendente"
+};
+
+function renderBlocos(blocos) {
+  return blocos.map(b => `
+    <div class="block">
+      <h2>${b.titulo} <span class="status ${STATUS_CLASSE[b.status] || 'pendente'}">${b.status.replace(/_/g, ' ')}</span></h2>
+      ${b.aviso ? `<div class="aviso">${b.aviso}</div>` : ""}
+      ${Array.isArray(b.itens) && b.itens.length ? `<ul>${b.itens.map(i => `<li>${typeof i === 'string' ? i : JSON.stringify(i)}</li>`).join("")}</ul>` : ""}
+    </div>`).join("");
+}
+
+async function carregar() {
+  const el = document.getElementById("conteudo");
+  const hoje = new Date().toISOString().slice(0, 10);
+
+  const [rBriefing, rUsuario] = await Promise.all([
+    evoraRest("briefings?select=id,tenant_id,blocos,markdown,ciencia_por,ciencia_em&data_referencia=eq." + hoje),
+    evoraRest("usuarios?select=id,nome,alcada_aprovacao&auth_user_id=eq." + decodificarSub(sessao.access_token))
+  ]);
+  if (!rBriefing || !rUsuario) return;
+
+  const briefings = await rBriefing.json();
+  const usuarios = await rUsuario.json();
+  const eu = usuarios[0];
+
+  if (!briefings.length) {
+    el.innerHTML = `<div class="msg">Nenhum briefing gerado para hoje (${hoje}) ainda.</div>`;
+    return;
+  }
+  const b = briefings[0];
+
+  let html = renderBlocos(b.blocos);
+
+  if (!b.markdown) {
+    html += `<div class="msg">O texto redigido pela Bia ainda não foi gerado (Fase 3 — falta a chamada à API da Claude).</div>`;
+  }
+
+  if (b.ciencia_por) {
+    html += `<div class="ciencia"><div class="ok">✓ Ciência já registrada</div><p style="margin-top:6px">em ${new Date(b.ciencia_em).toLocaleString("pt-BR")}</p></div>`;
+  } else if (eu && eu.alcada_aprovacao) {
+    html += `
+      <div class="ciencia">
+        <h3>Dar ciência</h3>
+        <p>Confirma que ${eu.nome} tomou ciência deste briefing. Isto NÃO aprova nem envia nada — é o registro exigido antes de qualquer ato de efeito externo (Manual v10.8).</p>
+        <button id="btnCiencia">Dar ciência como ${eu.nome}</button>
+        <div id="erroCiencia" class="err" style="margin-top:8px;font-size:12.5px"></div>
+      </div>`;
+  } else {
+    html += `<div class="msg">Você não tem alçada de aprovação — só quem tem pode dar ciência a este briefing.</div>`;
+  }
+
+  el.className = "";
+  el.innerHTML = html;
+
+  const btn = document.getElementById("btnCiencia");
+  if (btn) btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = "Registrando…";
+    const resp = await evoraRest("briefings?id=eq." + b.id, {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ ciencia_por: eu.id })
+    });
+    if (!resp) return;
+    if (!resp.ok) {
+      const erro = await resp.json();
+      document.getElementById("erroCiencia").textContent = erro.message || "Não foi possível registrar a ciência.";
+      btn.disabled = false; btn.textContent = "Dar ciência como " + eu.nome;
+      return;
+    }
+    carregar(); // recarrega para mostrar o estado "ciência já registrada"
+  };
+}
+carregar();
+</script>
+</body></html>

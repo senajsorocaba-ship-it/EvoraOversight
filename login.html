@@ -1,0 +1,75 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>Évora Oversight — Entrar</title>
+<style>
+:root{--navy:#213A5C;--gold:#B5985A;--cream:#F4F1EA;--paper:#FBFAF6;--ink:#23272e;--mut:#5b6470;--line:#E4DED1;--red:#9d3535}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(circle at 50% -10%,#22406e,#0e1a2b 60%);color:#eaf0f7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:linear-gradient(180deg,#fbfaf6,#f1ece0);color:var(--ink);max-width:380px;width:100%;border-radius:16px;border:2px solid var(--gold);box-shadow:0 30px 80px rgba(0,0,0,.5);padding:28px 26px}
+.brand{font-family:Georgia,serif;letter-spacing:.22em;font-size:12px;color:var(--gold);text-align:center;margin-bottom:6px}
+h1{font-family:Georgia,serif;font-size:22px;color:var(--navy);text-align:center;margin-bottom:22px}
+label{display:block;font-size:12px;font-weight:700;color:var(--mut);margin:14px 0 5px}
+input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff;color:var(--ink)}
+input:focus{outline:2px solid var(--navy);border-color:var(--navy)}
+button{width:100%;margin-top:20px;padding:11px;border:none;border-radius:8px;background:var(--navy);color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+button:hover{background:#152a45}
+button:disabled{opacity:.6;cursor:default}
+.err{margin-top:12px;font-size:12.5px;color:var(--red);text-align:center;min-height:16px}
+.env{margin-top:18px;font-size:10.5px;color:var(--mut);text-align:center;line-height:1.5}
+</style></head><body>
+<div class="card">
+  <div class="brand">ÉVORA <b>OVERSIGHT</b></div>
+  <h1>Entrar no Gabinete</h1>
+  <form id="f">
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="senha">Senha</label>
+    <input id="senha" type="password" autocomplete="current-password" required>
+    <button id="btn" type="submit">Entrar</button>
+    <div class="err" id="err"></div>
+  </form>
+  <div class="env" id="env"></div>
+</div>
+<script>
+// Config do Supabase para o FRONTEND — a anon key é pública por design
+// (protegida pela RLS do banco, diferente da service_role). Aponta pro
+// Supabase local (`supabase start`); trocar pela URL/anon key do projeto
+// na nuvem quando sairmos do teste local.
+const EVORA_SUPABASE = {
+  url: "http://127.0.0.1:54321",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+};
+document.getElementById("env").textContent = "Ambiente: " + EVORA_SUPABASE.url;
+
+const form = document.getElementById("f");
+const btn = document.getElementById("btn");
+const err = document.getElementById("err");
+
+form.addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  err.textContent = "";
+  btn.disabled = true; btn.textContent = "Entrando…";
+  try {
+    const resp = await fetch(EVORA_SUPABASE.url + "/auth/v1/token?grant_type=password", {
+      method: "POST",
+      headers: { "apikey": EVORA_SUPABASE.anonKey, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("senha").value
+      })
+    });
+    const dados = await resp.json();
+    if (!resp.ok) throw new Error(dados.error_description || dados.msg || "E-mail ou senha inválidos.");
+    // Sessão guardada só no navegador do usuário — nunca enviada a mais ninguém.
+    localStorage.setItem("evora_session", JSON.stringify({
+      access_token: dados.access_token,
+      refresh_token: dados.refresh_token,
+      expires_at: Date.now() + (dados.expires_in * 1000)
+    }));
+    location.href = "Evora Dashboard Castelo v8_4.html";
+  } catch (e) {
+    err.textContent = e.message;
+    btn.disabled = false; btn.textContent = "Entrar";
+  }
+});
+</script>
+</body></html>

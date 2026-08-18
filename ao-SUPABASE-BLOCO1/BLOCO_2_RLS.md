@@ -16,8 +16,6 @@ select count(*) as politicas from pg_policies where schemaname='public';
 ```
 Deve devolver **13**.
 
----
-
 ```sql
 -- =====================================================================
 -- ÉVORA OVERSIGHT — SEGURANÇA DE ISOLAMENTO (RLS)
@@ -270,6 +268,51 @@ create policy auditoria_insercao on auditoria
 -- Não existe policy de UPDATE nem de DELETE para auditoria: sem policy,
 -- a operação é negada pelo RLS. Somado ao trigger do schema, são duas
 -- camadas independentes garantindo a imutabilidade da trilha.
+
+-- ---------------------------------------------------------------------
+-- 12. FREIO HUMANO (v10.8) — só quem tem alcada_aprovacao dá ciência,
+-- só de si mesmo, timestamp sempre do servidor.
+--
+-- A policy briefings_isolamento (seção 3) já libera UPDATE em qualquer
+-- coluna para qualquer usuário do tenant+mundo — inclusive ciencia_por.
+-- Sozinha, ela deixaria um assessor sem alçada preencher ciencia_por com
+-- o PRÓPRIO id (autoaprovação) ou pior, com o id de outra pessoa. Esta
+-- trigger fecha essa lacuna: usa evora_claims() (definida acima nesta
+-- mesma seção de contexto) para exigir que quem está autenticado agora
+-- SEJA o usuário referenciado em ciencia_por, com alcada_aprovacao=true
+-- e ativo no mesmo tenant. Fica em BLOCO 2 (não no schema, BLOCO 1)
+-- porque depende de evora_claims(), que só existe a partir daqui.
+-- ---------------------------------------------------------------------
+create or replace function evora_valida_ciencia_briefing()
+returns trigger language plpgsql as $$
+declare
+  v_ok boolean;
+begin
+  if new.ciencia_por is distinct from old.ciencia_por then
+    if new.ciencia_por is null then
+      new.ciencia_em := null;  -- "desfazer" ciência (ex.: clique errado) — a ação em si fica na auditoria da aplicação
+    else
+      select exists (
+        select 1 from usuarios u
+        where u.id = new.ciencia_por
+          and u.tenant_id = new.tenant_id
+          and u.alcada_aprovacao
+          and u.ativo
+          and u.auth_user_id = nullif(evora_claims() ->> 'sub', '')::uuid
+      ) into v_ok;
+      if not v_ok then
+        raise exception 'ciencia_por precisa ser o proprio usuario autenticado, com alcada_aprovacao e ativo no tenant (freio humano, Manual v10.8).';
+      end if;
+      new.ciencia_em := now();
+    end if;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists trg_briefings_ciencia on briefings;
+create trigger trg_briefings_ciencia
+  before update on briefings
+  for each row execute function evora_valida_ciencia_briefing();
 
 -- =====================================================================
 -- TESTE DE ACEITE — a prova que vira argumento de venda
