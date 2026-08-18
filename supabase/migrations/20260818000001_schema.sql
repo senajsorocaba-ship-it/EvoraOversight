@@ -7,11 +7,15 @@
 -- Versão:  v1.0 · 20/07/2026 · alinhado ao Manual Supremo v10.6
 -- =====================================================================
 --
--- Cria as 11 TABELAS OFICIAIS do núcleo (contagem ratificada no Anexo 14
--- da v10.6; guias antigos falavam em 12 — a lista nominal sempre teve 11):
+-- Cria as 13 TABELAS OFICIAIS do núcleo. A contagem original (Anexo 14 da
+-- v10.6) era 11; a Fase 6 do plano de testes (decisão explícita do dono,
+-- exigida pelo CLAUDE.md deste repositório antes de mudar o schema)
+-- acrescentou as tabelas 12 e 13 para dar ingestão própria aos coletores
+-- Python (D:\motor\coletor_pncp_evora.py, imprensa_coletor_evora.py), que
+-- até então só escreviam em JSON fora do Postgres:
 --
---   1. tenants                 7. compromissos
---   2. usuarios                8. atas
+--   1. tenants                 7. compromissos              12. achados_fiscalizacao
+--   2. usuarios                8. atas                      13. mencoes_imprensa
 --   3. fontes                  9. desdobramentos
 --   4. briefings              10. desdobramento_eventos
 --   5. demandas               11. auditoria
@@ -346,6 +350,73 @@ create trigger trg_auditoria_sem_update_cmd
   for each statement execute function evora_auditoria_imutavel();
 
 -- ---------------------------------------------------------------------
+-- 12. ACHADOS_FISCALIZACAO — ingestão do coletor PNCP (Fase 6)
+--
+-- Campos espelham exatamente o que D:\motor\coletor_pncp_evora.py já
+-- produz (função normalizar()/sinalizar_indicios()) — não inventa campo
+-- que o coletor não entrega hoje (ex.: não há URL do contrato na saída
+-- atual, por isso não existe coluna url aqui). relevancia/indicio usam
+-- os mesmos dois valores que o Python já escreve ('rotina'/'atenção').
+-- Indício é sempre para VERIFICAÇÃO HUMANA — nunca vira acusação nesta
+-- tabela nem em lugar nenhum do produto.
+-- ---------------------------------------------------------------------
+create table if not exists achados_fiscalizacao (
+  id                  uuid primary key default gen_random_uuid(),
+  tenant_id           uuid not null references tenants(id),
+  mundo               evora_mundo not null default 'gabinete',
+  numero_pncp         text,                       -- pode vir vazio; a API do PNCP nem sempre devolve
+  objeto              text not null,
+  valor               numeric(14,2) not null default 0,
+  orgao               text,
+  fornecedor          text,
+  municipio           text,
+  data_publicacao     text,                       -- formato ainda não confirmado na API real; ver nota no coletor
+  mediana_referencia  numeric(14,2),               -- só preenchido quando houve base estatística (>=4 contratos comparáveis)
+  contratos_base      integer,                     -- quantos contratos entraram na mediana
+  desvio_pct          numeric(6,2),                -- só quando relevancia='atenção'
+  relevancia          text not null default 'rotina',
+  indicio             text,                        -- texto pronto do coletor, já com a ressalva "indício, não acusação"
+  fonte               text not null default 'PNCP',
+  ativo               boolean not null default true,
+  coletado_em         timestamptz not null default now(),
+  constraint achados_fiscalizacao_relevancia_valida check (relevancia in ('rotina', 'atenção')),
+  -- unique() comum, não índice parcial: NULL nunca colide com NULL em SQL
+  -- padrão, então contratos sem numero_pncp (a API do PNCP às vezes não
+  -- devolve) continuam podendo ter várias linhas sem violar nada — só os
+  -- que TÊM numero_pncp é que ficam protegidos contra duplicata. Isto
+  -- importa na prática: um índice parcial aqui não seria utilizável pelo
+  -- upsert do PostgREST (on_conflict não sabe inferir predicado parcial).
+  unique (tenant_id, numero_pncp)
+);
+
+comment on table achados_fiscalizacao is 'Ingestão do coletor PNCP (AFEx-g · Fiscalização). Indício para verificação humana — nunca acusação.';
+
+-- ---------------------------------------------------------------------
+-- 13. MENCOES_IMPRENSA — ingestão do coletor de imprensa (Fase 6)
+--
+-- Campos espelham D:\motor\imprensa_coletor_evora.py (item do RSS do
+-- Google News). fonte_nome é texto livre do RSS, não referencia `fontes`
+-- (o veículo declarado em `fontes` e o nome que o RSS devolve podem
+-- divergir — cruzar os dois é trabalho futuro, não inventado aqui).
+-- ---------------------------------------------------------------------
+create table if not exists mencoes_imprensa (
+  id                  uuid primary key default gen_random_uuid(),
+  tenant_id           uuid not null references tenants(id),
+  mundo               evora_mundo not null default 'gabinete',
+  titulo              text not null,
+  fonte_nome          text,
+  link                text not null,
+  publicado_em        timestamptz,                 -- parseado do pubDate do RSS quando possível
+  publicado_em_bruto  text,                         -- pubDate cru do RSS, se o parse falhar (fonte ou silêncio)
+  consulta            text,                         -- qual busca do coletor encontrou este item
+  ativo               boolean not null default true,
+  coletado_em         timestamptz not null default now(),
+  unique (tenant_id, link)
+);
+
+comment on table mencoes_imprensa is 'Ingestão do coletor de imprensa/Google News (AIM-g · Monitoramento).';
+
+-- ---------------------------------------------------------------------
 -- ÍNDICES — consultas do dia a dia
 -- ---------------------------------------------------------------------
 create index if not exists idx_usuarios_tenant        on usuarios(tenant_id) where ativo;
@@ -358,6 +429,8 @@ create index if not exists idx_desdob_tenant_status   on desdobramentos(tenant_i
 create index if not exists idx_desdob_eventos_pai     on desdobramento_eventos(desdobramento_id);
 create index if not exists idx_auditoria_tenant_data  on auditoria(tenant_id, ocorrido_em desc);
 create index if not exists idx_auditoria_acao         on auditoria(acao, ocorrido_em desc);
+create index if not exists idx_achados_fisc_tenant    on achados_fiscalizacao(tenant_id, mundo) where ativo;
+create index if not exists idx_mencoes_imprensa_tenant on mencoes_imprensa(tenant_id, mundo) where ativo;
 
 -- ---------------------------------------------------------------------
 -- ATUALIZAÇÃO AUTOMÁTICA DE atualizado_em
@@ -378,7 +451,8 @@ create trigger trg_demandas_atualizado before update on demandas
   for each row execute function evora_toca_atualizado_em();
 
 -- =====================================================================
--- FIM DO SCHEMA — 11 tabelas criadas.
+-- FIM DO SCHEMA — 13 tabelas criadas (11 originais + achados_fiscalizacao
+-- e mencoes_imprensa, Fase 6).
 -- Próximo passo obrigatório: rodar evora_rls_mvp_v1.sql
 -- Sem o RLS, o banco NÃO tem isolamento entre clientes.
 -- =====================================================================

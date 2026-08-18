@@ -26,15 +26,14 @@
 --   7. movimento_sugerido_72h (Bia — sempre sob freio humano)
 --
 -- O QUE ESTE BLOCO FAZ E O QUE NÃO FAZ (honestidade de escopo):
--- As 11 tabelas oficiais (Anexo 14) só guardam, hoje, dado estruturado
--- para os blocos 1, 5, 6 (parcial) e 7 — vindo de `demandas`,
--- `compromissos`, `desdobramentos` e `fontes`. Os blocos 2, 3, 4 e a
--- parte de "manchetes" do bloco 6 dependem dos coletores externos do
--- motor Python (D:\motor\coletor_pncp_evora.py, imprensa_coletor_evora.py),
--- que hoje escrevem em JSON fora do Postgres — não existe tabela para
--- itens coletados no schema de 11 tabelas, e este arquivo NÃO cria uma
--- (mudança de schema exige decisão explícita do dono, por norma do
--- CLAUDE.md deste repositório). Por isso esses blocos voltam marcados
+-- As 13 tabelas oficiais (11 do Anexo 14 + achados_fiscalizacao/
+-- mencoes_imprensa da Fase 6) guardam dado estruturado para os blocos
+-- 1, 3, 5, 6 e 7 — vindo de `demandas`, `compromissos`, `desdobramentos`,
+-- `fontes`, `achados_fiscalizacao` e `mencoes_imprensa`. Os blocos 2
+-- (radar de nomeações) e 4 (pulso da Câmara/DO) ainda dependem de
+-- coletores que não existem como código hoje (Diário Oficial, Câmara Sem
+-- Papel) — nenhuma tabela foi criada para eles porque não há o que
+-- ingerir ainda; seria schema morto. Continuam marcados
 -- status = 'pendente_integracao_externa', nunca preenchidos com invenção
 -- — é a Cláusula de Caráter Travado (D:\motor\montador_briefing_evora.py:
 -- "Não invente nada... Se algo não vier, diga que não há registro hoje").
@@ -78,6 +77,8 @@ declare
   v_resumo       jsonb;
   v_demandas     jsonb;
   v_fontes       jsonb;
+  v_achados      jsonb;
+  v_tem_mencoes  boolean;
   v_movimento    jsonb;
   v_blocos       jsonb;
 begin
@@ -119,6 +120,20 @@ begin
     )
   ) into v_resumo;
 
+  -- ---- Bloco 3: Fiscalização (AFEx-g) — dado real, tabela achados_fiscalizacao
+  -- (Fase 6). Prioriza relevancia='atenção' (indício a verificar), depois
+  -- os mais recentes. Indício é sempre para VERIFICAÇÃO HUMANA — o texto
+  -- de `indicio` já vem pronto do coletor com essa ressalva; esta função
+  -- não reformula nem conclui nada em cima dele.
+  with af as (
+    select numero_pncp, objeto, valor, orgao, fornecedor, relevancia, indicio, fonte
+    from achados_fiscalizacao
+    where tenant_id = p_tenant_id and mundo = p_mundo and ativo
+    order by (relevancia = 'atenção') desc, coletado_em desc
+    limit 15
+  )
+  select coalesce(jsonb_agg(to_jsonb(af)), '[]'::jsonb) into v_achados from af;
+
   -- ---- Bloco 5: Demandas (ADC-g) — dado real, tabela demandas ---------
   -- Campos de identificação de cidadão (cidadao_nome/cidadao_contato)
   -- ficam FORA do briefing por padrão: LGPD ainda pendente do parecer
@@ -133,19 +148,36 @@ begin
   )
   select coalesce(jsonb_agg(to_jsonb(d)), '[]'::jsonb) into v_demandas from d;
 
-  -- ---- Bloco 6 (parcial): Imprensa — lista de fontes declaradas -------
-  -- O Anexo 12 (saídas do AIM-g) inclui explicitamente "lista de fontes
-  -- declaradas" — isso a tabela `fontes` sustenta de verdade. As
-  -- manchetes coletadas (noticias.json) não têm tabela ainda: ficam
-  -- marcadas como pendentes, não inventadas.
+  -- ---- Bloco 6: Imprensa — fontes declaradas + manchetes reais --------
+  -- O Anexo 12 (saídas do AIM-g) inclui "lista de fontes declaradas"
+  -- (tabela `fontes`) e, desde a Fase 6, as manchetes que o coletor de
+  -- imprensa realmente encontrou (tabela `mencoes_imprensa`). Cada item
+  -- carrega 'tipo' para o consumidor (a Bia) distinguir os dois sem
+  -- precisar de uma segunda chave no bloco.
   with f as (
-    select nome, url, nivel, esfera, selo
+    select 'fonte_declarada'::text as tipo, nome, url, nivel, esfera, selo,
+           null::text as titulo, null::text as link, null::timestamptz as publicado_em
     from fontes
     where tenant_id = p_tenant_id and mundo = p_mundo and ativa
     order by prioridade asc, nome asc
     limit 20
+  ),
+  m as (
+    select 'noticia'::text as tipo, fonte_nome as nome, link as url,
+           null::evora_nivel_fonte as nivel, null::text as esfera, null::evora_selo_cvi as selo,
+           titulo, link, publicado_em
+    from mencoes_imprensa
+    where tenant_id = p_tenant_id and mundo = p_mundo and ativo
+    order by publicado_em desc nulls last
+    limit 20
   )
-  select coalesce(jsonb_agg(to_jsonb(f)), '[]'::jsonb) into v_fontes from f;
+  select coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) into v_fontes
+  from (select * from f union all select * from m) x;
+
+  select exists (
+    select 1 from mencoes_imprensa
+    where tenant_id = p_tenant_id and mundo = p_mundo and ativo
+  ) into v_tem_mencoes;
 
   -- ---- Bloco 7: Movimento sugerido (72h) (Bia — freio humano) ---------
   -- Candidatos reais a virarem sugestão de movimento: desdobramentos
@@ -183,15 +215,15 @@ begin
       'bloco', 'radar_de_nomeacoes', 'ordem', 2, 'titulo', 'Radar de Nomeações',
       'dono_agente', 'AFEx-g',
       'status', 'pendente_integracao_externa',
-      'aviso', 'Depende do coletor de Diário Oficial (D:\motor\imprensa_coletor_evora.py e afins); não há tabela no schema de 11 tabelas para itens coletados. Sem registro hoje.',
+      'aviso', 'Depende de um coletor de Diário Oficial que ainda não existe como código (só o do PNCP e o de imprensa existem hoje). Sem registro hoje.',
       'itens', '[]'::jsonb
     ),
     jsonb_build_object(
       'bloco', 'fiscalizacao', 'ordem', 3, 'titulo', 'Fiscalização',
       'dono_agente', 'AFEx-g',
-      'status', 'pendente_integracao_externa',
-      'aviso', 'Depende do coletor PNCP (D:\motor\coletor_pncp_evora.py); indício para acompanhar, nunca acusação. Sem tabela própria hoje — sem registro.',
-      'itens', '[]'::jsonb
+      'status', case when jsonb_array_length(v_achados) = 0 then 'sem_dado_hoje' else 'preenchido' end,
+      'aviso', 'Dado real da tabela achados_fiscalizacao (coletor PNCP, Fase 6). Indício para verificação humana — nunca acusação.',
+      'itens', v_achados
     ),
     jsonb_build_object(
       'bloco', 'pulso_da_camara_do', 'ordem', 4, 'titulo', 'Pulso da Câmara/DO',
@@ -210,8 +242,12 @@ begin
     jsonb_build_object(
       'bloco', 'imprensa', 'ordem', 6, 'titulo', 'Imprensa',
       'dono_agente', 'AIM-g',
-      'status', case when jsonb_array_length(v_fontes) = 0 then 'sem_dado_hoje' else 'parcial_fontes_declaradas' end,
-      'aviso', 'Lista de fontes declaradas é dado real (tabela fontes). Manchetes do dia dependem do coletor de imprensa, ainda sem tabela — sem registro.',
+      'status', case
+        when jsonb_array_length(v_fontes) = 0 then 'sem_dado_hoje'
+        when v_tem_mencoes then 'preenchido'
+        else 'parcial_fontes_declaradas'
+      end,
+      'aviso', 'Fontes declaradas (tabela fontes) e manchetes reais do coletor de imprensa (tabela mencoes_imprensa, Fase 6), quando houver — cada item marcado com "tipo".',
       'itens', v_fontes
     ),
     jsonb_build_object(
@@ -295,10 +331,13 @@ grant execute on function evora_gerar_briefing_diario(uuid, evora_mundo, date)  
 --   select data_referencia, blocos from briefings
 --     where tenant_id = '<uuid-do-tenant>' order by data_referencia desc limit 1;
 --
--- Confirme visualmente: 7 blocos, na ordem 1..7; blocos 2/3/4 com
--- status 'pendente_integracao_externa' (até existir tabela/ingestão
--- para os coletores externos); blocos 1/5/7 com dado real quando houver
--- linha correspondente hoje; bloco 6 mostrando as fontes cadastradas.
+-- Confirme visualmente: 7 blocos, na ordem 1..7; blocos 2 e 4 com status
+-- 'pendente_integracao_externa' (ainda sem coletor de Diário Oficial/Câmara);
+-- blocos 1/5/7 com dado real quando houver linha correspondente hoje;
+-- bloco 3 com dado real da tabela achados_fiscalizacao (Fase 6, insira via
+-- evora_ingestao_coletores.py depois de rodar o coletor PNCP); bloco 6
+-- mostrando fontes cadastradas + manchetes reais (mencoes_imprensa,
+-- idem, depois do coletor de imprensa).
 --
 -- PRÓXIMO PASSO (fora deste BLOCO): a camada externa (Edge Function ou
 -- job equivalente ao motor Python) que chama evora_gerar_briefing_diario
