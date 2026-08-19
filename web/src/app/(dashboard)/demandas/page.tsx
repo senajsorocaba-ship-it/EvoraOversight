@@ -1,6 +1,6 @@
 import { Topbar } from "@/components/topbar";
 import { FooterLegal } from "@/components/footer-legal";
-import { ClickableRow } from "@/components/clickable-row";
+import { DemandasTable } from "@/components/demandas-table";
 
 export default function DemandasPage() {
   return (
@@ -58,41 +58,7 @@ export default function DemandasPage() {
           </div>
         </div>
 
-        <div className="filters">
-          <div className="ftab active" data-filter-group="dem">Todas</div>
-          <div className="ftab" data-filter-group="dem">Abertas</div>
-          <div className="ftab" data-filter-group="dem">Em andamento</div>
-          <div className="ftab" data-filter-group="dem">Atrasadas</div>
-          <div className="ftab" data-filter-group="dem">Concluídas</div>
-          <div className="search">
-            <input type="text" placeholder="🔍 Buscar protocolo, cidadão ou assunto…" />
-          </div>
-        </div>
-
-        <div className="card">
-          <h3>Fila de demandas — 1.248 no período</h3>
-          <div className="tablewrap">
-            <table>
-              <thead>
-                <tr><th>Protocolo</th><th>Cidadão</th><th>Assunto</th><th>Área</th><th>Canal</th><th>Prazo</th><th>Status</th></tr>
-              </thead>
-              <tbody>
-                <ClickableRow href="/demandas/552">
-                  <td>#2026-1042</td><td>Maria S. Lima</td><td>Falta de médico no posto</td><td>Saúde</td><td><span className="chip">WhatsApp</span></td><td>em 2 dias</td><td><span className="badge andamento">Em andamento</span></td>
-                </ClickableRow>
-                <ClickableRow href="/demandas/552">
-                  <td>#2026-1041</td><td>João P. Alves</td><td>Buraco na via – Rua das Flores</td><td>Obras</td><td><span className="chip">Presencial</span></td><td>hoje</td><td><span className="badge critica">Crítica</span></td>
-                </ClickableRow>
-                <tr><td>#2026-1039</td><td>Ana C. Rocha</td><td>Vaga em creche</td><td>Educação</td><td><span className="chip">WhatsApp</span></td><td>em 5 dias</td><td><span className="badge aberta">Aberta</span></td></tr>
-                <tr><td>#2026-1037</td><td>Carlos M.</td><td>Iluminação queimada</td><td>Infraestrutura</td><td><span className="chip">Telefone</span></td><td>em 3 dias</td><td><span className="badge andamento">Em andamento</span></td></tr>
-                <tr><td>#2026-1034</td><td>Beatriz N.</td><td>Transporte escolar atrasado</td><td>Transporte</td><td><span className="chip">WhatsApp</span></td><td>atrasada</td><td><span className="badge atrasada">Atrasada</span></td></tr>
-                <tr><td>#2026-1031</td><td>Rafael T.</td><td>Coleta de lixo irregular</td><td>Infraestrutura</td><td><span className="chip">Presencial</span></td><td>em 6 dias</td><td><span className="badge aberta">Aberta</span></td></tr>
-                <tr><td>#2026-1029</td><td>Lúcia F.</td><td>Pedido de cadeira de rodas</td><td>Assistência</td><td><span className="chip">WhatsApp</span></td><td>concluída</td><td><span className="badge concluida">Concluída</span></td></tr>
-                <tr><td>#2026-1026</td><td>Pedro H.</td><td>Poda de árvore</td><td>Obras</td><td><span className="chip">Telefone</span></td><td>em 4 dias</td><td><span className="badge andamento">Em andamento</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DemandasTable />
       </main>
       <FooterLegal />
     </>
