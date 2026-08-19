@@ -1,0 +1,633 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Évora Gabinete — Painel Completo</title>
+<link rel="stylesheet" href="evora-painel.css">
+</head><body>
+
+<div class="app">
+
+  <div class="sb-backdrop" id="sb-backdrop"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="mark">⛨</div>
+      <div><div class="name">EVORA</div><div class="sub">OVERSIGHT</div></div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-item active" data-view="geral"><span class="ic">▦</span> Visão Geral</div>
+      <div class="sb-item" data-view="demandas"><span class="ic">☰</span> Demandas</div>
+      <div class="sb-item" data-view="atendimentos"><span class="ic">◔</span> Atendimentos</div>
+      <div class="sb-item" data-view="fiscalizacoes"><span class="ic">⛨</span> Fiscalizações</div>
+      <div class="sb-item" data-view="projetos"><span class="ic">▤</span> Projetos e Proposições</div>
+      <div class="sb-item" data-view="contratos"><span class="ic">▥</span> Contratos e Licitações</div>
+      <div class="sb-item" data-view="denuncias"><span class="ic">⚠</span> Denúncias</div>
+      <div class="sb-item" data-view="indicadores"><span class="ic">▲</span> Indicadores</div>
+      <div class="sb-item" data-view="documentos"><span class="ic">▢</span> Documentos</div>
+      <div class="sb-item" data-view="agenda"><span class="ic">▦</span> Agenda</div>
+      <div class="sb-item" data-view="relatorios"><span class="ic">▤</span> Relatórios</div>
+      <div class="sb-item" data-view="config"><span class="ic">⚙</span> Configurações</div>
+    </nav>
+    <div class="sb-security">
+      <div class="t">🔒 Segurança Institucional</div>
+      <div class="l">Nível: <b>ALTO</b></div>
+      <div class="l">Último backup: hoje, 08:15</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="hamb" id="hamb">☰</button>
+      <div class="tb-title">
+        <h1 id="tb-h1">Painel Executivo do Gabinete</h1>
+        <p id="tb-p">Vereadora Tatiane Costa · Período: últimos 30 dias</p>
+      </div>
+      <div class="tb-right">
+        <div class="pill bia"><span class="dot"></span> B <span class="lbl-txt">Bia · ouvindo</span></div>
+        <div class="pill nil">N <span class="lbl-txt">Nil · 🔒 sob alçada</span></div>
+        <div class="bell">⚠<span class="badge-n badge">3</span></div>
+        <div class="user">
+          <div class="av">G</div>
+          <div class="meta"><div class="n">Gabinete</div><div class="r">Acesso: Gestor</div></div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content" id="content">
+
+      <!-- ============================================================ VISÃO GERAL -->
+      <section class="view active" id="view-geral">
+        <div class="kpis">
+          <div class="kpi" onclick="abrirDrill('demandas_recebidas')"><div class="row"><div class="ic blue">☰</div><div class="lbl">Demandas recebidas</div></div><div class="num">1.248</div><div class="delta up">+12% vs. período anterior</div></div>
+          <div class="kpi" onclick="abrirDrill('demandas_concluidas')"><div class="row"><div class="ic green">✓</div><div class="lbl">Demandas concluídas</div></div><div class="num">1.031</div><div class="delta up">+9% vs. período anterior</div></div>
+          <div class="kpi"><div class="row"><div class="ic amber">▤</div><div class="lbl">Em andamento</div></div><div class="num">187</div><div class="delta up">+5% vs. período anterior</div></div>
+          <div class="kpi" onclick="abrirDrill('demandas_criticas')"><div class="row"><div class="ic red">⚠</div><div class="lbl">Críticas pendentes</div></div><div class="num">30</div><div class="delta down">-3% vs. período anterior</div></div>
+          <div class="kpi" onclick="abrirDrill('fiscalizacoes')"><div class="row"><div class="ic purple">⛨</div><div class="lbl">Fiscalizações realizadas</div></div><div class="num">18</div></div>
+          <div class="kpi"><div class="row"><div class="ic blue">▤</div><div class="lbl">Requerimentos protocolados</div></div><div class="num">42</div></div>
+          <div class="kpi"><div class="row"><div class="ic green">▤</div><div class="lbl">Projetos de lei em tramitação</div></div><div class="num">11</div></div>
+          <div class="kpi"><div class="row"><div class="ic red">⚠</div><div class="lbl">Denúncias recebidas</div></div><div class="num">67</div></div>
+        </div>
+
+        <div class="grid3">
+          <div class="card">
+            <h3>Demandas por Área</h3>
+            <div class="donut-wrap">
+              <svg class="donut" viewBox="0 0 120 120">
+                <g transform="rotate(-90 60 60)">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#2f6b46" stroke-width="18" stroke-dasharray="137.2 326.7" stroke-dashoffset="0"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#9a6b15" stroke-width="18" stroke-dasharray="91.5 326.7" stroke-dashoffset="-137.2"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#2b5478" stroke-width="18" stroke-dasharray="49.0 326.7" stroke-dashoffset="-228.7"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#6f4a86" stroke-width="18" stroke-dasharray="32.7 326.7" stroke-dashoffset="-277.7"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#5b6470" stroke-width="18" stroke-dasharray="16.3 326.7" stroke-dashoffset="-310.4"/>
+                </g>
+                <text x="60" y="57" text-anchor="middle" fill="#fff" font-size="15" font-family="Georgia,serif">1.248</text>
+                <text x="60" y="71" text-anchor="middle" fill="#8aa0bd" font-size="7.5">Total</text>
+              </svg>
+              <div class="legend">
+                <div class="li"><span class="sw" style="background:#2f6b46"></span> Saúde <b>42% (524)</b></div>
+                <div class="li"><span class="sw" style="background:#9a6b15"></span> Infraestrutura <b>28% (349)</b></div>
+                <div class="li"><span class="sw" style="background:#2b5478"></span> Educação <b>15% (187)</b></div>
+                <div class="li"><span class="sw" style="background:#6f4a86"></span> Assistência Social <b>10% (125)</b></div>
+                <div class="li"><span class="sw" style="background:#5b6470"></span> Outros <b>5% (63)</b></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Mapa de Criticidade</h3>
+            <div class="tablewrap"><table style="min-width:280px">
+              <thead><tr><th>Área</th><th>Baixo</th><th>Médio</th><th>Alto</th><th>Crítico</th></tr></thead>
+              <tbody>
+                <tr><td>Saúde</td><td>12</td><td>31</td><td>18</td><td>4</td></tr>
+                <tr><td>Educação</td><td>8</td><td>12</td><td>4</td><td>0</td></tr>
+                <tr><td>Obras</td><td>5</td><td>19</td><td>11</td><td>2</td></tr>
+                <tr><td>Transporte</td><td>3</td><td>7</td><td>5</td><td>1</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+
+          <div class="card">
+            <h3>Fiscalizações Prioritárias</h3>
+            <div class="listline"><span class="dot" style="background:#e07a7a"></span><div class="tt">Unidade Básica de Saúde Central<small>Criticidade: <b style="color:#e07a7a">CRÍTICA</b></small></div></div>
+            <div class="listline"><span class="dot" style="background:#e07a7a"></span><div class="tt">Contrato de Transporte Escolar<small>Criticidade: <b style="color:#e07a7a">CRÍTICA</b></small></div></div>
+            <div class="listline"><span class="dot" style="background:#e0a53a"></span><div class="tt">Obra da Avenida Principal<small>Criticidade: <b style="color:#e0a53a">ALTA</b></small></div></div>
+            <div class="listline"><span class="dot" style="background:#e0a53a"></span><div class="tt">Creche Municipal Setor Norte<small>Criticidade: <b style="color:#e0a53a">ALTA</b></small></div></div>
+            <div class="listline"><span class="dot" style="background:#9fc4e6"></span><div class="tt">Iluminação Pública – Centro<small>Criticidade: <b style="color:#9fc4e6">MÉDIA</b></small></div></div>
+          </div>
+        </div>
+
+        <div class="grid3">
+          <div class="card">
+            <h3>Demandas sem Movimentação</h3>
+            <div class="tablewrap"><table style="min-width:260px">
+              <thead><tr><th>Assunto</th><th>Dias sem atualização</th></tr></thead>
+              <tbody>
+                <tr><td>Saúde</td><td><span class="badge critica">18</span></td></tr>
+                <tr><td>Transporte</td><td><span class="badge alta">14</span></td></tr>
+                <tr><td>Obras</td><td><span class="badge alta">11</span></td></tr>
+                <tr><td>Educação</td><td><span class="badge media">8</span></td></tr>
+              </tbody>
+            </table></div>
+          </div>
+
+          <div class="card bars">
+            <h3>Indicador de Eficiência do Gabinete</h3>
+            <div class="brow"><div class="blbl"><span>Atendimento ao Cidadão</span><b>91%</b></div><div class="btrack"><div class="bfill" style="width:91%;background:#5fae7e"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Fiscalização</span><b>84%</b></div><div class="btrack"><div class="bfill" style="width:84%;background:#2b5478"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Transparência</span><b>76%</b></div><div class="btrack"><div class="bfill" style="width:76%;background:#6f4a86"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Controle Interno</span><b>68%</b></div><div class="btrack"><div class="bfill" style="width:68%;background:#e0a53a"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Segurança Institucional</span><b>55%</b></div><div class="btrack"><div class="bfill" style="width:55%;background:#e07a7a"></div></div></div>
+          </div>
+
+          <div class="card">
+            <h3>Alertas Estratégicos</h3>
+            <div class="alert warn">⚠ Não existe inventário formal de senhas institucionais.</div>
+            <div class="alert warn">⚠ Dependência elevada de dois assessores-chave.</div>
+            <div class="alert warn">⚠ Ausência de protocolo de continuidade institucional.</div>
+            <div class="alert warn">⚠ 30 demandas críticas aguardando resposta.</div>
+            <div class="alert ok">✓ Nenhum prazo legislativo vencido no período.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ DEMANDAS -->
+      <section class="view" id="view-demandas">
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="row"><div class="ic blue">☰</div><div class="lbl">Abertas</div></div><div class="num">217</div></div>
+          <div class="kpi"><div class="row"><div class="ic amber">▤</div><div class="lbl">Em andamento</div></div><div class="num">187</div></div>
+          <div class="kpi"><div class="row"><div class="ic green">✓</div><div class="lbl">Concluídas (mês)</div></div><div class="num">1.031</div></div>
+          <div class="kpi"><div class="row"><div class="ic red">⚠</div><div class="lbl">Atrasadas</div></div><div class="num">30</div></div>
+        </div>
+        <div class="filters">
+          <div class="ftab active" data-filter-group="dem">Todas</div>
+          <div class="ftab" data-filter-group="dem">Abertas</div>
+          <div class="ftab" data-filter-group="dem">Em andamento</div>
+          <div class="ftab" data-filter-group="dem">Atrasadas</div>
+          <div class="ftab" data-filter-group="dem">Concluídas</div>
+          <div class="search"><input type="text" placeholder="🔍 Buscar protocolo, cidadão ou assunto…"></div>
+        </div>
+        <div class="card">
+          <h3>Fila de demandas — 1.248 no período</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Protocolo</th><th>Cidadão</th><th>Assunto</th><th>Área</th><th>Canal</th><th>Prazo</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr onclick="irPara('demanda552')"><td>#2026-1042</td><td>Maria S. Lima</td><td>Falta de médico no posto</td><td>Saúde</td><td><span class="chip">WhatsApp</span></td><td>em 2 dias</td><td><span class="badge andamento">Em andamento</span></td></tr>
+              <tr onclick="irPara('demanda552')"><td>#2026-1041</td><td>João P. Alves</td><td>Buraco na via – Rua das Flores</td><td>Obras</td><td><span class="chip">Presencial</span></td><td>hoje</td><td><span class="badge critica">Crítica</span></td></tr>
+              <tr><td>#2026-1039</td><td>Ana C. Rocha</td><td>Vaga em creche</td><td>Educação</td><td><span class="chip">WhatsApp</span></td><td>em 5 dias</td><td><span class="badge aberta">Aberta</span></td></tr>
+              <tr><td>#2026-1037</td><td>Carlos M.</td><td>Iluminação queimada</td><td>Infraestrutura</td><td><span class="chip">Telefone</span></td><td>em 3 dias</td><td><span class="badge andamento">Em andamento</span></td></tr>
+              <tr><td>#2026-1034</td><td>Beatriz N.</td><td>Transporte escolar atrasado</td><td>Transporte</td><td><span class="chip">WhatsApp</span></td><td>atrasada</td><td><span class="badge atrasada">Atrasada</span></td></tr>
+              <tr><td>#2026-1031</td><td>Rafael T.</td><td>Coleta de lixo irregular</td><td>Infraestrutura</td><td><span class="chip">Presencial</span></td><td>em 6 dias</td><td><span class="badge aberta">Aberta</span></td></tr>
+              <tr><td>#2026-1029</td><td>Lúcia F.</td><td>Pedido de cadeira de rodas</td><td>Assistência</td><td><span class="chip">WhatsApp</span></td><td>concluída</td><td><span class="badge concluida">Concluída</span></td></tr>
+              <tr><td>#2026-1026</td><td>Pedro H.</td><td>Poda de árvore</td><td>Obras</td><td><span class="chip">Telefone</span></td><td>em 4 dias</td><td><span class="badge andamento">Em andamento</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ============================================================ ATENDIMENTOS -->
+      <section class="view" id="view-atendimentos">
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="row"><div class="ic blue">◔</div><div class="lbl">Atendimentos no mês</div></div><div class="num">1.486</div></div>
+          <div class="kpi"><div class="row"><div class="ic green">◔</div><div class="lbl">Via WhatsApp</div></div><div class="num">58%</div></div>
+          <div class="kpi"><div class="row"><div class="ic amber">◔</div><div class="lbl">Presencial</div></div><div class="num">27%</div></div>
+          <div class="kpi"><div class="row"><div class="ic purple">◔</div><div class="lbl">Telefone</div></div><div class="num">15%</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card bars">
+            <h3>Atendimentos por canal</h3>
+            <div class="brow"><div class="blbl"><span>WhatsApp</span><b>58%</b></div><div class="btrack"><div class="bfill" style="width:58%;background:#2fb0a8"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Presencial</span><b>27%</b></div><div class="btrack"><div class="bfill" style="width:27%;background:#5fae7e"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Telefone</span><b>15%</b></div><div class="btrack"><div class="bfill" style="width:15%;background:#6f4a86"></div></div></div>
+            <div class="brow"><div class="blbl"><span>E-mail / Site</span><b>9%</b></div><div class="btrack"><div class="bfill" style="width:9%;background:#2b5478"></div></div></div>
+          </div>
+          <div class="card">
+            <h3>Tempo médio de primeira resposta</h3>
+            <div style="font-family:Georgia,serif;font-size:34px;color:#fff">2h 14min</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:4px">média no mês · meta: 4h</div>
+            <div class="badge baixo" style="margin-top:10px">38% abaixo da meta</div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Atendimentos de hoje</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Hora</th><th>Cidadão</th><th>Canal</th><th>Assunto</th><th>Responsável</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>09:42</td><td>Maria S. Lima</td><td><span class="chip">WhatsApp</span></td><td>Falta de médico no posto</td><td>Júlia (assessora)</td><td><span class="badge resolvido">Resolvido</span></td></tr>
+              <tr><td>09:31</td><td>João P. Alves</td><td><span class="chip">Presencial</span></td><td>Buraco na via</td><td>Marcos (assessor)</td><td><span class="badge encaminhada">Encaminhado</span></td></tr>
+              <tr><td>09:15</td><td>Ana C. Rocha</td><td><span class="chip">WhatsApp</span></td><td>Vaga em creche</td><td>Júlia (assessora)</td><td><span class="badge aguardando">Aguardando</span></td></tr>
+              <tr><td>08:58</td><td>Carlos M.</td><td><span class="chip">Telefone</span></td><td>Iluminação</td><td>Bot Verix → Júlia</td><td><span class="badge andamento">Em andamento</span></td></tr>
+              <tr><td>08:40</td><td>Beatriz N.</td><td><span class="chip">WhatsApp</span></td><td>Transporte escolar</td><td>Marcos (assessor)</td><td><span class="badge resolvido">Resolvido</span></td></tr>
+              <tr><td>08:22</td><td>Rafael T.</td><td><span class="chip">Presencial</span></td><td>Coleta de lixo</td><td>Júlia (assessora)</td><td><span class="badge andamento">Em andamento</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ============================================================ FISCALIZAÇÕES -->
+      <section class="view" id="view-fiscalizacoes">
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="row"><div class="ic purple">⛨</div><div class="lbl">Realizadas (ano)</div></div><div class="num">18</div></div>
+          <div class="kpi"><div class="row"><div class="ic amber">▤</div><div class="lbl">Em curso</div></div><div class="num">5</div></div>
+          <div class="kpi"><div class="row"><div class="ic red">⚠</div><div class="lbl">Pendências críticas</div></div><div class="num">6</div></div>
+          <div class="kpi"><div class="row"><div class="ic blue">▢</div><div class="lbl">Evidências arquivadas</div></div><div class="num">214</div></div>
+        </div>
+        <div class="card">
+          <h3>Fiscalizações — registro e evidências</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Objeto</th><th>Órgão</th><th>Tipo</th><th>Data</th><th>Evidências</th><th>Criticidade</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Unidade Básica de Saúde Central</td><td>Sec. Saúde</td><td>Visita técnica</td><td>02/06</td><td><span class="chip">12 fotos</span></td><td><span class="badge critica">CRÍTICA</span></td><td><span class="badge concluida">Relatório emitido</span></td></tr>
+              <tr><td>Contrato Transporte Escolar</td><td>Sec. Educação</td><td>Análise contratual</td><td>28/05</td><td><span class="chip">8 docs</span></td><td><span class="badge critica">CRÍTICA</span></td><td><span class="badge apuracao">Em apuração</span></td></tr>
+              <tr><td>Obra da Avenida Principal</td><td>Sec. Obras</td><td>Vistoria in loco</td><td>21/05</td><td><span class="chip">23 fotos</span></td><td><span class="badge alta">ALTA</span></td><td><span class="badge andamento">Notificado</span></td></tr>
+              <tr><td>Creche Setor Norte</td><td>Sec. Educação</td><td>Visita técnica</td><td>14/05</td><td><span class="chip">9 fotos</span></td><td><span class="badge alta">ALTA</span></td><td><span class="badge andamento">Acompanhamento</span></td></tr>
+              <tr><td>Iluminação Pública – Centro</td><td>Sec. Infra</td><td>Inspeção</td><td>07/05</td><td><span class="chip">5 fotos</span></td><td><span class="badge media">MÉDIA</span></td><td><span class="badge concluida">Concluída</span></td></tr>
+            </tbody>
+          </table></div>
+          <div class="modal-note" style="margin-top:14px">Cada fiscalização guarda evidências (fotos, documentos, áudios) com data, autor e geolocalização — prontas para virar requerimento, denúncia ou matéria.</div>
+        </div>
+      </section>
+
+      <!-- ============================================================ PROJETOS E PROPOSIÇÕES -->
+      <section class="view" id="view-projetos">
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="row"><div class="ic green">▤</div><div class="lbl">Projetos de lei</div></div><div class="num">11</div></div>
+          <div class="kpi"><div class="row"><div class="ic blue">▤</div><div class="lbl">Indicações</div></div><div class="num">64</div></div>
+          <div class="kpi"><div class="row"><div class="ic purple">▤</div><div class="lbl">Requerimentos</div></div><div class="num">42</div></div>
+          <div class="kpi"><div class="row"><div class="ic amber">▤</div><div class="lbl">Emendas</div></div><div class="num">9</div></div>
+        </div>
+        <div class="card">
+          <h3>Produção legislativa — tramitação</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Nº</th><th>Tipo</th><th>Ementa</th><th>Fase</th><th>Data</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>PL 045/2026</td><td>Projeto de Lei</td><td>Programa Municipal de Saúde da Mulher</td><td><div class="progline" style="margin:0"><div class="fase" style="width:120px"><div class="fasetrack"><div class="fasefill" style="width:55%"></div></div></div><span style="font-size:11px;color:var(--mut)">Comissões</span></div></td><td>03/06</td><td><span class="badge tramitacao">Em tramitação</span></td></tr>
+              <tr><td>IND 312/2026</td><td>Indicação</td><td>Recapeamento da Rua das Flores</td><td><div class="progline" style="margin:0"><div class="fase" style="width:120px"><div class="fasetrack"><div class="fasefill" style="width:100%"></div></div></div><span style="font-size:11px;color:var(--mut)">Concluída</span></div></td><td>01/06</td><td><span class="badge atendida">Atendida</span></td></tr>
+              <tr><td>REQ 128/2026</td><td>Requerimento</td><td>Informações sobre contrato de merenda</td><td><div class="progline" style="margin:0"><div class="fase" style="width:120px"><div class="fasetrack"><div class="fasefill" style="width:25%"></div></div></div><span style="font-size:11px;color:var(--mut)">Aguardando</span></div></td><td>30/05</td><td><span class="badge protocolado">Protocolado</span></td></tr>
+              <tr><td>PL 041/2026</td><td>Projeto de Lei</td><td>Transparência em obras públicas</td><td><div class="progline" style="margin:0"><div class="fase" style="width:120px"><div class="fasetrack"><div class="fasefill" style="width:40%"></div></div></div><span style="font-size:11px;color:var(--mut)">1ª votação</span></div></td><td>24/05</td><td><span class="badge tramitacao">Em tramitação</span></td></tr>
+              <tr><td>IND 305/2026</td><td>Indicação</td><td>Área de lazer no Setor Norte</td><td><div class="progline" style="margin:0"><div class="fase" style="width:120px"><div class="fasetrack"><div class="fasefill" style="width:80%"></div></div></div><span style="font-size:11px;color:var(--mut)">Executivo</span></div></td><td>18/05</td><td><span class="badge encaminhada">Encaminhada</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ============================================================ CONTRATOS E LICITAÇÕES -->
+      <section class="view" id="view-contratos">
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="row"><div class="ic blue">▥</div><div class="lbl">Contratos monitorados</div></div><div class="num">48</div></div>
+          <div class="kpi"><div class="row"><div class="ic green">▥</div><div class="lbl">Valor total acompanhado</div></div><div class="num">R$ 312,4 mi</div></div>
+          <div class="kpi"><div class="row"><div class="ic red">⚠</div><div class="lbl">Alertas de risco</div></div><div class="num">7</div></div>
+          <div class="kpi"><div class="row"><div class="ic amber">▤</div><div class="lbl">Vencendo em 60 dias</div></div><div class="num">5</div></div>
+        </div>
+        <div class="card">
+          <h3>Contratos e licitações — monitoramento</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Contrato</th><th>Objeto</th><th>Fornecedor</th><th>Valor</th><th>Vigência</th><th>Risco</th></tr></thead>
+            <tbody>
+              <tr><td>CT 102/2024</td><td>Transporte escolar</td><td>TransVia Ltda.</td><td>R$ 8,4 mi</td><td>12/2026</td><td><span class="badge alto">ALTO</span></td></tr>
+              <tr><td>CT 088/2025</td><td>Merenda escolar</td><td>Aliment Foods</td><td>R$ 12,1 mi</td><td>06/2026</td><td><span class="badge media">MÉDIO</span></td></tr>
+              <tr><td>CT 145/2023</td><td>Obras – Av. Principal</td><td>Const. Horizonte</td><td>R$ 23,7 mi</td><td>09/2026</td><td><span class="badge alto">ALTO</span></td></tr>
+              <tr><td>CT 061/2025</td><td>Coleta de resíduos</td><td>EcoLimp S.A.</td><td>R$ 15,9 mi</td><td>03/2027</td><td><span class="badge baixo">BAIXO</span></td></tr>
+              <tr><td>CT 119/2024</td><td>Iluminação pública</td><td>LumenTech</td><td>R$ 6,2 mi</td><td>11/2026</td><td><span class="badge media">MÉDIO</span></td></tr>
+            </tbody>
+          </table></div>
+          <div class="modal-note" style="margin-top:14px">O sistema cruza valores, aditivos e prazos com bases públicas e sinaliza desvios — base objetiva para fiscalizar o Executivo.</div>
+        </div>
+      </section>
+
+      <!-- ============================================================ DENÚNCIAS -->
+      <section class="view" id="view-denuncias">
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="row"><div class="ic red">⚠</div><div class="lbl">Recebidas</div></div><div class="num">67</div></div>
+          <div class="kpi"><div class="row"><div class="ic amber">▤</div><div class="lbl">Em apuração</div></div><div class="num">19</div></div>
+          <div class="kpi"><div class="row"><div class="ic green">⛨</div><div class="lbl">Procedentes</div></div><div class="num">23</div></div>
+          <div class="kpi"><div class="row"><div class="ic blue">▢</div><div class="lbl">Arquivadas</div></div><div class="num">25</div></div>
+        </div>
+        <div class="card">
+          <h3>Canal de denúncias — registro e sigilo</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Protocolo</th><th>Tema</th><th>Origem</th><th>Data</th><th>Sigilo</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr onclick="abrirDenunciaSigilosa('DN-219','Possível sobrepreço em obra')"><td>#DN-219</td><td>Possível sobrepreço em obra</td><td>Cidadão (anônimo)</td><td>04/06</td><td><span class="badge sigiloso">Sigiloso</span></td><td><span class="badge apuracao">Em apuração</span></td></tr>
+              <tr><td>#DN-217</td><td>Atraso reiterado de merenda</td><td>Servidor</td><td>02/06</td><td><span class="badge reservado">Reservado</span></td><td><span class="badge procedente">Procedente</span></td></tr>
+              <tr onclick="abrirDenunciaSigilosa('DN-214','Irregularidade em licitação')"><td>#DN-214</td><td>Irregularidade em licitação</td><td>Cidadão</td><td>29/05</td><td><span class="badge sigiloso">Sigiloso</span></td><td><span class="badge apuracao">Em apuração</span></td></tr>
+              <tr onclick="abrirDenunciaSigilosa('DN-210','Mau uso de veículo público')"><td>#DN-210</td><td>Mau uso de veículo público</td><td>Cidadão (anônimo)</td><td>22/05</td><td><span class="badge sigiloso">Sigiloso</span></td><td><span class="chip">Arquivada</span></td></tr>
+              <tr><td>#DN-205</td><td>Falta de acessibilidade</td><td>Cidadão</td><td>15/05</td><td><span class="badge publico">Público</span></td><td><span class="badge procedente">Procedente</span></td></tr>
+            </tbody>
+          </table></div>
+          <div class="modal-note" style="margin-top:14px">Denúncias entram por canal sigiloso, recebem protocolo e trilha de apuração — protegendo o denunciante e a autoridade.</div>
+        </div>
+      </section>
+
+      <!-- ============================================================ INDICADORES -->
+      <section class="view" id="view-indicadores">
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="row"><div class="ic blue">▲</div><div class="lbl">Demandas/mês (média)</div></div><div class="num">248</div></div>
+          <div class="kpi"><div class="row"><div class="ic green">✓</div><div class="lbl">Taxa de resolução</div></div><div class="num">83%</div></div>
+          <div class="kpi"><div class="row"><div class="ic purple">◔</div><div class="lbl">Tempo médio de resposta</div></div><div class="num">2h14</div></div>
+          <div class="kpi"><div class="row"><div class="ic red">⚠</div><div class="lbl">Backlog crítico</div></div><div class="num">30</div></div>
+        </div>
+        <div class="grid2">
+          <div class="card">
+            <h3>Evolução de demandas recebidas</h3>
+            <svg class="linechart" viewBox="0 0 320 140" preserveAspectRatio="none">
+              <polyline points="10,90 62,72 114,60 166,80 218,32 270,58" fill="none" stroke="#5fae7e" stroke-width="2.5"/>
+              <g fill="#5fae7e">
+                <circle cx="10" cy="90" r="3"/><circle cx="62" cy="72" r="3"/><circle cx="114" cy="60" r="3"/>
+                <circle cx="166" cy="80" r="3"/><circle cx="218" cy="32" r="3"/><circle cx="270" cy="58" r="3"/>
+              </g>
+              <text x="10" y="132" fill="#8aa0bd" font-size="10">Jan</text>
+              <text x="58" y="132" fill="#8aa0bd" font-size="10">Fev</text>
+              <text x="108" y="132" fill="#8aa0bd" font-size="10">Mar</text>
+              <text x="160" y="132" fill="#8aa0bd" font-size="10">Abr</text>
+              <text x="212" y="132" fill="#8aa0bd" font-size="10">Mai</text>
+              <text x="264" y="132" fill="#8aa0bd" font-size="10">Jun</text>
+            </svg>
+          </div>
+          <div class="card">
+            <h3>Demandas concluídas por mês</h3>
+            <svg class="barchart" viewBox="0 0 320 140" preserveAspectRatio="none">
+              <rect x="14" y="55" width="30" height="65" rx="3" fill="#5fae7e"/>
+              <rect x="66" y="48" width="30" height="72" rx="3" fill="#5fae7e"/>
+              <rect x="118" y="38" width="30" height="82" rx="3" fill="#5fae7e"/>
+              <rect x="170" y="60" width="30" height="60" rx="3" fill="#5fae7e"/>
+              <rect x="222" y="25" width="30" height="95" rx="3" fill="#5fae7e"/>
+              <rect x="274" y="42" width="30" height="78" rx="3" fill="#5fae7e"/>
+              <text x="20" y="132" fill="#8aa0bd" font-size="10">Jan</text>
+              <text x="72" y="132" fill="#8aa0bd" font-size="10">Fev</text>
+              <text x="124" y="132" fill="#8aa0bd" font-size="10">Mar</text>
+              <text x="176" y="132" fill="#8aa0bd" font-size="10">Abr</text>
+              <text x="228" y="132" fill="#8aa0bd" font-size="10">Mai</text>
+              <text x="280" y="132" fill="#8aa0bd" font-size="10">Jun</text>
+            </svg>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card bars">
+            <h3>Eficiência por dimensão</h3>
+            <div class="brow"><div class="blbl"><span>Atendimento ao Cidadão</span><b>91%</b></div><div class="btrack"><div class="bfill" style="width:91%;background:#5fae7e"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Fiscalização</span><b>84%</b></div><div class="btrack"><div class="bfill" style="width:84%;background:#2b5478"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Transparência</span><b>76%</b></div><div class="btrack"><div class="bfill" style="width:76%;background:#6f4a86"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Controle Interno</span><b>68%</b></div><div class="btrack"><div class="bfill" style="width:68%;background:#e0a53a"></div></div></div>
+            <div class="brow"><div class="blbl"><span>Segurança Institucional</span><b>55%</b></div><div class="btrack"><div class="bfill" style="width:55%;background:#e07a7a"></div></div></div>
+          </div>
+          <div class="card">
+            <h3>Demandas por área</h3>
+            <div class="donut-wrap">
+              <svg class="donut" viewBox="0 0 120 120">
+                <g transform="rotate(-90 60 60)">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#2f6b46" stroke-width="18" stroke-dasharray="137.2 326.7" stroke-dashoffset="0"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#9a6b15" stroke-width="18" stroke-dasharray="91.5 326.7" stroke-dashoffset="-137.2"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#2b5478" stroke-width="18" stroke-dasharray="49.0 326.7" stroke-dashoffset="-228.7"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#6f4a86" stroke-width="18" stroke-dasharray="32.7 326.7" stroke-dashoffset="-277.7"/>
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#5b6470" stroke-width="18" stroke-dasharray="16.3 326.7" stroke-dashoffset="-310.4"/>
+                </g>
+                <text x="60" y="57" text-anchor="middle" fill="#fff" font-size="15" font-family="Georgia,serif">1.248</text>
+                <text x="60" y="71" text-anchor="middle" fill="#8aa0bd" font-size="7.5">Total</text>
+              </svg>
+              <div class="legend">
+                <div class="li"><span class="sw" style="background:#2f6b46"></span> Saúde <b>42% (524)</b></div>
+                <div class="li"><span class="sw" style="background:#9a6b15"></span> Infraestrutura <b>28% (349)</b></div>
+                <div class="li"><span class="sw" style="background:#2b5478"></span> Educação <b>15% (187)</b></div>
+                <div class="li"><span class="sw" style="background:#6f4a86"></span> Assistência Social <b>10% (125)</b></div>
+                <div class="li"><span class="sw" style="background:#5b6470"></span> Outros <b>5% (63)</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ DOCUMENTOS -->
+      <section class="view" id="view-documentos">
+        <div class="folders">
+          <div class="folder"><div class="fic" style="background:rgba(43,84,120,.3);color:#8fbfe0">▢</div><div class="ft">Ofícios</div><div class="fn">312 arquivos</div></div>
+          <div class="folder"><div class="fic" style="background:rgba(111,74,134,.3);color:#b78fd6">▢</div><div class="ft">Requerimentos</div><div class="fn">148 arquivos</div></div>
+          <div class="folder"><div class="fic" style="background:rgba(47,107,70,.3);color:#5fae7e">▢</div><div class="ft">Contratos</div><div class="fn">96 arquivos</div></div>
+          <div class="folder"><div class="fic" style="background:rgba(154,107,21,.3);color:#e0a53a">▢</div><div class="ft">Evidências</div><div class="fn">214 arquivos</div></div>
+          <div class="folder"><div class="fic" style="background:rgba(47,107,70,.3);color:#5fae7e">▢</div><div class="ft">Projetos de Lei</div><div class="fn">54 arquivos</div></div>
+          <div class="folder"><div class="fic" style="background:rgba(157,53,53,.3);color:#e07a7a">▢</div><div class="ft">Confidenciais</div><div class="fn">37 arquivos</div></div>
+        </div>
+        <div class="card">
+          <h3>Documentos recentes</h3>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Nome</th><th>Tipo</th><th>Arquivo</th><th>Data</th><th>Acesso</th></tr></thead>
+            <tbody>
+              <tr><td>Ofício 482/2026 – Sec. Saúde</td><td>Ofício</td><td>PDF · 220 KB</td><td>04/06</td><td><span class="badge gabinete">Gabinete</span></td></tr>
+              <tr><td>Contrato Transporte Escolar (íntegra)</td><td>Contrato</td><td>PDF · 1,8 MB</td><td>28/05</td><td><span class="badge restrito">Restrito</span></td></tr>
+              <tr><td>Relatório de Fiscalização – UBS Central</td><td>Relatório</td><td>PDF · 4,2 MB</td><td>02/06</td><td><span class="badge gabinete">Gabinete</span></td></tr>
+              <tr><td>Inventário de Acessos (Aegis)</td><td>Segurança</td><td>Cofre · cifrado</td><td>01/06</td><td><span class="badge confidencial">Confidencial</span></td></tr>
+              <tr><td>PL 045/2026 – Saúde da Mulher</td><td>Projeto</td><td>DOCX · 96 KB</td><td>03/06</td><td><span class="badge publico">Público</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ============================================================ AGENDA -->
+      <section class="view" id="view-agenda">
+        <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi"><div class="row"><div class="ic blue">▦</div><div class="lbl">Compromissos na semana</div></div><div class="num">23</div></div>
+          <div class="kpi"><div class="row"><div class="ic amber">⛨</div><div class="lbl">Vistorias agendadas</div></div><div class="num">4</div></div>
+          <div class="kpi"><div class="row"><div class="ic purple">▤</div><div class="lbl">Sessões / comissões</div></div><div class="num">5</div></div>
+          <div class="kpi"><div class="row"><div class="ic green">◔</div><div class="lbl">Atendimentos marcados</div></div><div class="num">9</div></div>
+        </div>
+        <div class="card">
+          <h3>Semana de 09 a 13 de junho</h3>
+          <div class="agenda-week">
+            <div class="aday"><h4>Seg 09</h4>
+              <div class="aevt"><b>09:00</b>Reunião de equipe</div>
+              <div class="aevt"><b>14:00</b>Atendimento ao cidadão</div>
+            </div>
+            <div class="aday"><h4>Ter 10</h4>
+              <div class="aevt"><b>10:00</b>Comissão de Saúde</div>
+              <div class="aevt"><b>16:00</b>Visita – UBS Central</div>
+            </div>
+            <div class="aday"><h4>Qua 11</h4>
+              <div class="aevt"><b>09:30</b>Sessão plenária</div>
+            </div>
+            <div class="aday"><h4>Qui 12</h4>
+              <div class="aevt"><b>11:00</b>Vistoria de obra</div>
+              <div class="aevt"><b>15:00</b>Imprensa</div>
+            </div>
+            <div class="aday"><h4>Sex 13</h4>
+              <div class="aevt"><b>10:00</b>Audiência pública</div>
+              <div class="aevt"><b>13:00</b>Gabinete – despachos</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ RELATÓRIOS -->
+      <section class="view" id="view-relatorios">
+        <div class="reports-grid">
+          <div class="card">
+            <h3>Modelos de relatório</h3>
+            <div class="rmodel"><div class="ric" style="background:rgba(43,84,120,.3);color:#8fbfe0">▤</div><div class="rt"><b>Relatório Mensal de Atividades</b><span>Demandas, atendimentos, fiscalização e produção legislativa.</span></div><button>Gerar</button></div>
+            <div class="rmodel"><div class="ric" style="background:rgba(47,107,70,.3);color:#5fae7e">▤</div><div class="rt"><b>Prestação de Contas à População</b><span>Versão pública, pronta para redes e portal.</span></div><button>Gerar</button></div>
+            <div class="rmodel"><div class="ric" style="background:rgba(154,107,21,.3);color:#e0a53a">▤</div><div class="rt"><b>Relatório de Fiscalização</b><span>Consolida evidências e apontamentos por objeto.</span></div><button>Gerar</button></div>
+            <div class="rmodel"><div class="ric" style="background:rgba(111,74,134,.3);color:#b78fd6">▤</div><div class="rt"><b>Indicadores de Desempenho</b><span>KPIs do gabinete com gráficos e séries históricas.</span></div><button>Gerar</button></div>
+          </div>
+          <div class="card">
+            <h3>Relatórios gerados</h3>
+            <div class="tablewrap"><table style="min-width:340px">
+              <thead><tr><th>Nome</th><th>Modelo</th><th>Data</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>Relatório Mensal – Maio/2026</td><td>Mensal de Atividades</td><td>01/06</td><td><span class="badge pronto">Pronto</span></td></tr>
+                <tr><td>Prestação de Contas – 1º semestre</td><td>Versão pública</td><td>30/05</td><td><span class="badge pronto">Pronto</span></td></tr>
+                <tr><td>Fiscalização – Transporte Escolar</td><td>Fiscalização</td><td>28/05</td><td><span class="badge pronto">Pronto</span></td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </div>
+        <div class="modal-note" style="margin-top:14px">Um clique gera o relatório com os dados do período — sem montar planilha, sem copiar e colar.</div>
+      </section>
+
+      <!-- ============================================================ CONFIGURAÇÕES -->
+      <section class="view" id="view-config">
+        <div class="cfg-grid">
+          <div class="cfg-card"><div class="cic" style="background:rgba(43,84,120,.3);color:#8fbfe0">⚙</div><h4>Usuários e Perfis</h4><p>Gabinete, assessores e níveis de acesso (Gestor, Operador, Leitura). 6 usuários ativos.</p></div>
+          <div class="cfg-card"><div class="cic" style="background:rgba(154,107,21,.3);color:#e0a53a">⚙</div><h4>Segurança (Aegis)</h4><p>Controle de acesso, 2 fatores e registro de tudo. Inventário de senhas e cofre digital.</p></div>
+          <div class="cfg-card"><div class="cic" style="background:rgba(157,53,53,.3);color:#e07a7a">⚙</div><h4>Defesa Cibernética (Sisec)</h4><p>Monitoramento de tentativas de acesso externo e blindagem contra invasão.</p></div>
+          <div class="cfg-card"><div class="cic" style="background:rgba(111,74,134,.3);color:#b78fd6">⚙</div><h4>Continuidade (Sigma)</h4><p>Guardiões e protocolo de sucessão para ausência, incapacidade ou emergência.</p></div>
+          <div class="cfg-card"><div class="cic" style="background:rgba(47,107,70,.3);color:#5fae7e">⚙</div><h4>Acervo Jurídico (Veritas)</h4><p>Legislação municipal, estadual e federal disponível aos agentes.</p></div>
+          <div class="cfg-card"><div class="cic" style="background:rgba(43,84,120,.3);color:#8fbfe0">⚙</div><h4>Integrações &amp; LGPD</h4><p>WhatsApp, e-mail, portal do cidadão. Consentimento e finalidade por dado.</p></div>
+          <div class="cfg-card"><div class="cic" style="background:rgba(154,107,21,.3);color:#e0a53a">⚙</div><h4>Auditoria Soberana (AAS)</h4><p>Registra tudo, de todos — reporta só à autoridade. Trilha imutável: ninguém desliga, nem o suporte.</p></div>
+          <div class="cfg-card"><div class="cic" style="background:rgba(111,74,134,.3);color:#b78fd6">⚙</div><h4>Mentor da Autoridade (AMA)</h4><p>Conselheiro pessoal e privado da autoridade. Perfil em cofre cifrado (SigmaOne); acesso exclusivo.</p></div>
+        </div>
+      </section>
+
+      <!-- ============================================================ DEMANDA 552 (detalhe, aberto por voz/clique) -->
+      <section class="view" id="view-demanda552">
+        <div class="detail-back" onclick="irPara('demandas')">‹ Voltar</div>
+        <div class="voice-banner">🎤 Sessão por voz ativa — comandos reconhecidos: "Bia, abra a aba Demandas" → "quero ver a demanda 552" → "amplie" (A.T.)<span class="ok">tela cheia · dashboard preservado atrás</span></div>
+
+        <div class="card">
+          <div class="dd-sub">Demanda · aberta por comando de voz</div>
+          <div class="dd-title">#2026-0552 — Falta de transporte adaptado para cadeirante</div>
+          <div class="dd-badges">
+            <span class="chip">Saúde/Acessibilidade</span>
+            <span class="chip">WhatsApp</span>
+            <span class="badge andamento">Em andamento</span>
+          </div>
+
+          <div class="grid2" style="margin-top:16px">
+            <div>
+              <div class="mini-h">Dados da demanda</div>
+              <ul class="dl">
+                <li><b>Cidadã:</b> Helena M. Castro · Jd. Santa Rosália</li>
+                <li><b>Recebida:</b> 21/05 · <b>Prazo:</b> em 4 dias</li>
+                <li><b>Responsável:</b> Júlia (assessora) · ADC</li>
+                <li><b>Órgão acionado:</b> Sec. de Mobilidade (Ofício 461/2026)</li>
+              </ul>
+
+              <div class="mini-h" style="margin-top:18px">Pesquisar nesta demanda — por voz</div>
+              <div class="mic-row"><button class="mic-btn">🎤</button> "Bia, o que a Secretaria respondeu?" · "há casos parecidos no bairro?"</div>
+              <div class="bia-answer">
+                A Secretaria respondeu em 09/06: veículo adaptado previsto para a linha 27 em 30 dias. Há 3 demandas semelhantes no bairro — posso consolidá-las num requerimento.
+                <span class="src">Fontes: ADC · ofício 461/2026 · base de demandas</span>
+              </div>
+            </div>
+            <div>
+              <div class="mini-h">Histórico</div>
+              <div class="timeline">
+                <div class="tl-item"><b>21/05</b>Recebida via WhatsApp (protocolo automático)</div>
+                <div class="tl-item"><b>22/05</b>Triagem ADC — criticidade ALTA</div>
+                <div class="tl-item"><b>23/05</b>Ofício 461/2026 enviado à Sec. de Mobilidade</div>
+                <div class="tl-item"><b>09/06</b>Resposta da Secretaria recebida e anexada</div>
+                <div class="tl-item"><b>hoje</b>Aberta por voz pela usuária — consulta em curso</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cmdhint">Comandos de janela disponíveis: <code>"dividir"</code> → lado a lado · <code>"minimizar"</code> → vira botão · <code>"voltar"</code> → dashboard · <code>"imprima o histórico"</code> (R06)</div>
+        </div>
+      </section>
+
+    </main>
+
+    <div class="foot-legal">🔒 Documento confidencial — material sigiloso · uso restrito · Évora Oversight · CNPJ 61.317.228/0001-02 · Preparado para Vereadora Tatiane Costa — Sorocaba/SP</div>
+  </div>
+</div>
+
+<button class="vrx">🛟 VRX Support</button>
+
+<!-- =============================================================== MODAL: aprofundamento interativo -->
+<div class="overlay" id="modal-drill">
+  <div class="modal">
+    <div class="modal-h">
+      <div><span class="mk" id="drill-kicker">VOCÊ CLICOU EM</span><h2 id="drill-titulo">—</h2></div>
+      <button class="x" data-close-modal="modal-drill">×</button>
+    </div>
+    <div class="modal-b">
+      <div class="modal-cols">
+        <div>
+          <div class="mini-h">Fundamentos do dado</div>
+          <ul class="mfacts" id="drill-fatos"></ul>
+          <div class="mini-h" style="margin-top:16px">Aprofundar o assunto</div>
+          <div class="search"><input type="text" placeholder="🎤 Diga ou digite a demanda que quer abrir…"></div>
+          <div id="drill-resultados" style="margin-top:6px"></div>
+          <a class="foot-link" onclick="irPara('demandas'); fecharModal('modal-drill')">Abrir lista completa de demandas →</a>
+        </div>
+        <div>
+          <div class="mini-h">Perguntar à Bia — voz ou texto</div>
+          <div class="mic-row"><button class="mic-btn">🎤</button> <span id="drill-pergunta">—</span></div>
+          <div class="bia-answer">
+            <span id="drill-resposta">—</span>
+            <span class="src" id="drill-fontes">—</span>
+          </div>
+          <div style="font-size:11px;color:var(--mut)">↳ Nil acionada em segundo plano (somente leitura, sob alçada de campanha) para cruzar o dado eleitoral, quando autorizado.</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <span class="status-line">🔒 Modo pesquisa · somente leitura</span>
+        <div style="font-size:12.5px;color:#cfe0f2">O dado consolidado vem de várias entradas sistêmicas e <b>não pode ser alterado por aqui</b>. Você pode:</div>
+        <div class="act-btns">
+          <button>Sinalizar erro</button>
+          <button>Dado inválido</button>
+          <button>Pedir revisão →</button>
+        </div>
+        <div class="modal-note">Um pedido de revisão dispara alerta ao assessor de alçada superior.</div>
+      </div>
+      <div class="modal-note" style="margin-top:12px">🔒 Toda tentativa de alteração gera aviso e fica registrada na Auditoria Interna (agente sob a Bia).</div>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================================== MODAL: denúncia sigilosa por voz -->
+<div class="overlay" id="modal-sigilo">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-h">
+      <div><span class="mk">Comando de voz recebido</span><h2>"Bia, abra a denúncia <span id="sig-protocolo">DN-000</span>"</h2></div>
+      <button class="x" data-close-modal="modal-sigilo">×</button>
+    </div>
+    <div class="modal-b">
+      <div class="sig-warn">⚠ Conteúdo classificado como <b>SIGILOSO</b> — confirmação falada obrigatória (Regra 04)</div>
+      <div class="sig-q">
+        <span id="sig-pergunta">—</span>
+        <span class="meta">Alçada verificada ✓ · biometria de voz confirmada ✓ · modalidade: voz (persistente)</span>
+      </div>
+      <div class="sig-btns">
+        <button class="primary" onclick="confirmarSigilo()">🎤 "Confirmo" — abrir</button>
+        <button class="ghost" data-close-modal="modal-sigilo">🎤 "Cancelar"</button>
+        <button class="ghost" onclick="confirmarSigilo()">"modo texto" — abrir em silêncio</button>
+      </div>
+      <div class="modal-note" style="margin-top:12px">Em modo silencioso (clique/texto) o sistema não vocaliza conteúdo sigiloso. Este acesso, confirmado ou cancelado, é registrado na AAS.</div>
+      <div class="modal-note">🔒 Denúncias: protocolo, sigilo do denunciante e trilha de apuração — Regras 03 · 04 · 07.</div>
+    </div>
+  </div>
+</div>
+
+<!-- =============================================================== MODO DESCANSO -->
+<div class="rest" id="rest">
+  <div class="shield">⛨</div>
+  <h2 class="serif">Modo descanso</h2>
+  <p>Ausência detectada — conteúdo ocultado automaticamente</p>
+  <div class="scanpill">📷 Aguardando reconhecimento facial da usuária logada…</div>
+  <div class="rcards">
+    <div class="rcard"><b>Sessão congelada</b><span>A pesquisa retorna no ponto exato — nada se perde.</span></div>
+    <div class="rcard"><b>Tempo configurável</b><span>Descanso após X segundos sem presença (teto por alçada).</span></div>
+    <div class="rcard"><b>Rosto não autorizado</b><span>Não desbloqueia · evento registrado na AAS.</span></div>
+    <div class="rcard"><b>Template protegido</b><span>Biometria cifrada no AEGIS · processamento local (LGPD).</span></div>
+  </div>
+  <div class="foot">🔒 Évora Oversight · Regra 03 — sigilo físico sem perder o trabalho · (clique em qualquer lugar para simular o desbloqueio)</div>
+</div>
+
+<script src="evora-painel.js"></script>
+</body></html>
