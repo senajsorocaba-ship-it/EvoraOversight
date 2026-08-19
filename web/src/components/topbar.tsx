@@ -1,6 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useSidebar } from "@/components/sidebar-context";
+import { createClient } from "@/lib/supabase/client";
 
 export function Topbar({
   title,
@@ -10,6 +12,14 @@ export function Topbar({
   subtitle: string;
 }) {
   const { toggle } = useSidebar();
+  const router = useRouter();
+
+  async function sair() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <header className="topbar">
@@ -30,13 +40,18 @@ export function Topbar({
         <div className="bell">
           ⚠<span className="badge-n badge">3</span>
         </div>
-        <div className="user">
+        <button
+          className="user"
+          onClick={sair}
+          title="Sair"
+          style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+        >
           <div className="av">G</div>
           <div className="meta">
             <div className="n">Gabinete</div>
-            <div className="r">Acesso: Gestor</div>
+            <div className="r">Acesso: Gestor · Sair</div>
           </div>
-        </div>
+        </button>
       </div>
     </header>
   );
