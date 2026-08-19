@@ -1,6 +1,7 @@
-/* ÉVORA OVERSIGHT — Painel do Gabinete (telas completas, PDF "Evora Telas 16x9")
-   Mesma paleta/família visual do Dashboard Castelo (navy/dourado), agora
-   como shell único com 12 telas + modais, 100% responsivo. */
+/* ÉVORA OVERSIGHT — Painel do Gabinete: uma página HTML por página do PDF
+   "Evora Telas 16x9" (demonstração do sistema, tenant zero), cada tela um
+   arquivo separado, navegação por link real. Este CSS + evora-painel.js
+   são compartilhados por todas. */
 
 :root{
   --navy:#213A5C; --navy-deep:#152a45; --gold:#B5985A; --goldl:#d8c08a;
@@ -8,18 +9,29 @@
   --green:#2f6b46; --greenl:#5fae7e; --amber:#9a6b15; --amberl:#e0a53a;
   --red:#9d3535; --redl:#e07a7a; --plum:#6f4a86; --plum-l:#b78fd6; --blue:#2b5478;
   --ink:#eaf0f7; --panel:linear-gradient(160deg,rgba(40,66,110,.55),rgba(21,36,56,.85));
-  --panel-solid:#1a2e49; --sidebar-w:230px; --topbar-h:64px;
+  --panel-solid:#1a2e49; --sidebar-w:232px; --topbar-h:64px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{
-  background:radial-gradient(circle at 50% -10%,#22406e,#0e1a2b 60%);
+  background:radial-gradient(circle at 50% -12%,#1f3c66,#0b1626 62%);
   color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-  line-height:1.5; min-height:100vh; overflow-x:hidden;
+  line-height:1.5; min-height:100vh; overflow-x:hidden; position:relative;
 }
 .serif{font-family:Georgia,"Times New Roman",serif}
-a{color:inherit}
+a{color:inherit;text-decoration:none}
 button{font-family:inherit}
+svg.ico{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* Marca d'água diagonal "CONFIDENCIAL · USO RESTRITO · ÉVORA OVERSIGHT",
+   repetida ao fundo — assinatura visual do material confidencial no PDF.
+   Padrão SVG tileável, rotacionado, bem sutil (baixa opacidade). */
+.watermark{
+  position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.05;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="520" height="220" viewBox="0 0 520 220"><text x="0" y="40" font-family="Georgia,serif" font-size="16" fill="%23ffffff" letter-spacing="2">CONFIDENCIAL %C2%B7 USO RESTRITO %C2%B7 %C3%89VORA OVERSIGHT %C2%B7</text><text x="-260" y="140" font-family="Georgia,serif" font-size="16" fill="%23ffffff" letter-spacing="2">CONFIDENCIAL %C2%B7 USO RESTRITO %C2%B7 %C3%89VORA OVERSIGHT %C2%B7</text></svg>');
+  background-repeat:repeat; transform:rotate(-18deg) scale(1.4); transform-origin:center;
+}
+.app, .rest, .print-page{position:relative;z-index:1}
 
 /* ---------------------------------------------------------------- layout */
 .app{display:flex; min-height:100vh}
@@ -78,8 +90,8 @@ button{font-family:inherit}
 .user .meta .r{font-size:10.5px;color:var(--mut)}
 
 .content{padding:20px 22px 90px;max-width:1400px;width:100%;margin:0 auto}
-.view{display:none}
-.view.active{display:block}
+/* Cada arquivo HTML agora é uma página própria (sem troca de view por JS) —
+   o conteúdo principal fica direto dentro de <main class="content">. */
 
 /* --------------------------------------------------------------- pieces */
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
@@ -294,4 +306,42 @@ tbody tr:last-child td{border-bottom:none}
 @media (max-width: 420px){
   .kpis{grid-template-columns:1fr 1fr}
   .rest .rcards{grid-template-columns:1fr}
+}
+
+/* ============================================================ RELATÓRIO (página clara) */
+.print-body{background:#F4F1EA;color:#23272e}
+.print-body .watermark{opacity:.045;filter:invert(1) grayscale(1) brightness(.3)}
+.print-wrap{max-width:900px;margin:0 auto;padding:40px 26px 60px}
+.print-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px;flex-wrap:wrap;gap:14px}
+.print-logo{display:flex;align-items:center;gap:10px}
+.print-logo .mark{width:34px;height:34px;border:1.5px solid #B5985A;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#B5985A}
+.print-logo .name{font-family:Georgia,serif;font-size:16px;color:#213A5C}
+.print-logo .sub{font-size:9px;letter-spacing:.22em;color:#B5985A}
+.print-tag{font-size:10px;letter-spacing:.12em;font-weight:800;color:#8f7740;text-align:right}
+.print-kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9a6b15;font-weight:800;margin-bottom:8px}
+.print-h1{font-family:Georgia,serif;font-size:30px;color:#152a45;margin-bottom:6px}
+.print-sub{font-size:13px;color:#6b7280;margin-bottom:26px}
+.print-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+.print-stat{background:#fff;border:1px solid #E4DED1;border-radius:12px;padding:18px 14px;text-align:center}
+.print-stat b{display:block;font-family:Georgia,serif;font-size:26px;color:#B5985A}
+.print-stat span{font-size:11px;color:#6b7280}
+.print-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.print-card{background:#fff;border:1px solid #E4DED1;border-radius:12px;padding:18px}
+.print-card h3{font-family:Georgia,serif;font-size:15px;color:#213A5C;margin-bottom:12px}
+.print-bar-row{display:flex;align-items:center;gap:10px;font-size:12.5px;margin:8px 0}
+.print-bar-row .lb{width:120px;flex:none;color:#3a4048}
+.print-bar-row .tk{flex:1;height:8px;background:#eee7d7;border-radius:5px;overflow:hidden}
+.print-bar-row .fl{height:100%;border-radius:5px}
+.print-bar-row .vv{width:40px;text-align:right;font-weight:700;color:#213A5C}
+.print-list{list-style:none;font-size:13px}
+.print-list li{padding:6px 0;border-bottom:1px solid #eee7d7}
+.print-list li:last-child{border-bottom:none}
+.print-list b{color:#213A5C}
+.print-list.attn li b.crit{color:#9d3535}
+.print-list.attn li b.alto{color:#9a6b15}
+.print-list.attn li b.med{color:#6b7280}
+.print-foot{margin-top:20px;padding-top:16px;border-top:1px solid #E4DED1;display:flex;justify-content:space-between;font-size:10.5px;color:#8a8474;flex-wrap:wrap;gap:8px}
+@media (max-width:640px){
+  .print-stats{grid-template-columns:1fr 1fr}
+  .print-cols{grid-template-columns:1fr}
 }
