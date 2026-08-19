@@ -309,8 +309,8 @@ tbody tr:last-child td{border-bottom:none}
 }
 
 /* ============================================================ RELATÓRIO (página clara) */
-.print-body{background:#F4F1EA;color:#23272e}
-.print-body .watermark{opacity:.045;filter:invert(1) grayscale(1) brightness(.3)}
+.print-page{background:#F4F1EA;color:#23272e;min-height:100vh}
+.print-page .watermark{opacity:.045;filter:invert(1) grayscale(1) brightness(.3)}
 .print-wrap{max-width:900px;margin:0 auto;padding:40px 26px 60px}
 .print-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:26px;flex-wrap:wrap;gap:14px}
 .print-logo{display:flex;align-items:center;gap:10px}

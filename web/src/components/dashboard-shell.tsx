@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { SidebarProvider, useSidebar } from "@/components/sidebar-context";
 import { Sidebar } from "@/components/sidebar";
 
 const REST_SEGUNDOS = 120;
+
+// Telas "abertas por voz" (aprofundamento, item sigiloso etc.) — o timer de
+// descanso fica desligado, igual ao data-rest-timer="off" das páginas
+// originais, pra não interromper a demonstração de navegação por voz.
+const ROTAS_SEM_TIMER = ["/visao-geral/aprofundamento", "/demandas/552", "/denuncias/sigilo"];
 
 function Backdrop() {
   const { open, close } = useSidebar();
@@ -20,9 +25,13 @@ function Backdrop() {
 
 function InactivityGuard() {
   const router = useRouter();
+  const pathname = usePathname();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ativo = !ROTAS_SEM_TIMER.includes(pathname);
 
   useEffect(() => {
+    if (!ativo) return;
+
     function reiniciar() {
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => {
@@ -38,7 +47,7 @@ function InactivityGuard() {
       if (timer.current) clearTimeout(timer.current);
       eventos.forEach((ev) => document.removeEventListener(ev, reiniciar));
     };
-  }, [router]);
+  }, [router, ativo]);
 
   return null;
 }
