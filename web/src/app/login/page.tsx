@@ -52,7 +52,7 @@ export default function LoginPage() {
             <path d="M15 21v-7" />
           </svg>
         </div>
-        <div className="login-sub">OVERSIGHT</div>
+        <div className="login-sub">EVORA OVERSIGHT</div>
         <div className="login-tag">INTELIGÊNCIA POLÍTICA LEGISLATIVA</div>
       </div>
 

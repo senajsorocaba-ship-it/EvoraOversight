@@ -351,7 +351,7 @@ tbody tr:last-child td{border-bottom:none}
 
 .login-brand{display:flex;flex-direction:column;align-items:center;margin-bottom:28px}
 .login-mark{width:56px;height:56px;border:1.5px solid var(--gold);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--gold);margin-bottom:14px}
-.login-sub{font-family:Georgia,serif;letter-spacing:.3em;font-size:15px;color:var(--goldl);text-align:center}
+.login-sub{font-family:Georgia,serif;letter-spacing:.16em;font-size:15px;color:var(--goldl);text-align:center}
 .login-tag{margin-top:8px;font-size:10px;letter-spacing:.22em;color:var(--mut);text-align:center}
 
 .login-card{background:linear-gradient(160deg,rgba(40,66,110,.55),rgba(21,36,56,.9));border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.5);padding:28px 26px;max-width:380px;width:100%}
