@@ -58,7 +58,7 @@ export default function LoginPage() {
 
       <div className="login-card">
         <form onSubmit={handleSubmit}>
-          <label htmlFor="email">E-mail funcional</label>
+          <label htmlFor="email">E-mail</label>
           <input
             id="email"
             type="email"
