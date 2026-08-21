@@ -93,6 +93,9 @@ alter table desdobramento_eventos enable row level security;
 alter table auditoria             enable row level security;
 alter table achados_fiscalizacao  enable row level security;
 alter table mencoes_imprensa      enable row level security;
+alter table municipios            enable row level security;
+alter table municipio_fontes      enable row level security;
+alter table municipio_trilha      enable row level security;
 
 -- Força o RLS inclusive para o dono das tabelas (defesa em profundidade)
 alter table tenants               force row level security;
@@ -106,6 +109,18 @@ alter table atas                  force row level security;
 alter table desdobramentos        force row level security;
 alter table desdobramento_eventos force row level security;
 alter table auditoria             force row level security;
+-- achados_fiscalizacao/mencoes_imprensa (Fase 6): estavam enabled mas não
+-- forced — lacuna encontrada e corrigida na Fase 7 (Atlas Municipal),
+-- ficando consistentes com todo o resto do arquivo.
+alter table achados_fiscalizacao  force row level security;
+alter table mencoes_imprensa      force row level security;
+alter table municipios            force row level security;
+alter table municipio_fontes      force row level security;
+-- municipio_trilha NÃO é forçada aqui de propósito diferente: nem sequer
+-- tem policy (ver seção 15) — sem grant e sem policy, RLS enabled já
+-- nega tudo para authenticated/anon; force é redundante mas inofensivo,
+-- então mantemos por consistência com as demais.
+alter table municipio_trilha      force row level security;
 
 -- ---------------------------------------------------------------------
 -- GRANTS DE TABELA — obrigatório para a Data API (PostgREST) enxergar a
@@ -133,9 +148,20 @@ grant select on tenants to authenticated;         -- só leitura do próprio; up
 grant select, insert on auditoria to authenticated;  -- imutável: sem update/delete de propósito (ver seção 11)
 grant select on achados_fiscalizacao, mencoes_imprensa to authenticated;  -- só leitura: quem escreve é a ingestão (service_role), não o usuário
 
+-- Atlas Municipal (Anexo 16, Fase 7): leitura aberta a QUALQUER tenant
+-- autenticado — é o ponto todo do Atlas, dado de cidade não é isolado por
+-- tenant (ver policies de select-using(true) na seção 15). Escrita
+-- travada ao service_role só: sem insert/update/delete para authenticated
+-- aqui, a trava anti-envenenamento começa neste grant, antes mesmo da RLS.
+grant select on municipios, municipio_fontes to authenticated;
+-- municipio_trilha: SEM grant para authenticated nesta fase — não existe
+-- visualizador (nenhuma UI foi construída na Fase 7). service_role
+-- continua com acesso total via a linha abaixo. Reabrir isto é uma linha,
+-- se/quando um leitor de trilha for construído.
+
 -- service_role ignora RLS por design (ver nota no topo deste arquivo) — o
 -- motor do briefing e outros jobs de servidor precisam de acesso irrestrito
--- às 13 tabelas, então aqui a concessão é total, não por operação.
+-- às 16 tabelas, então aqui a concessão é total, não por operação.
 grant all privileges on all tables in schema public to service_role;
 
 -- ---------------------------------------------------------------------
@@ -274,7 +300,29 @@ create policy mencoes_imprensa_isolamento on mencoes_imprensa
   );
 
 -- ---------------------------------------------------------------------
--- 14. FREIO HUMANO (v10.8) — só quem tem alcada_aprovacao dá ciência,
+-- 14. MUNICIPIOS / MUNICIPIO_FONTES (Fase 7, Anexo 16) — leitura aberta
+-- a qualquer tenant autenticado, propositalmente DIFERENTE do padrão
+-- tenant_id=evora_tenant_atual() usado em toda tabela acima: o Atlas é
+-- camada compartilhada da plataforma, não isolada por tenant — dois
+-- gabinetes da mesma cidade devem enxergar a mesma linha. A trava
+-- anti-envenenamento não é "quem lê", é "quem escreve": não existe
+-- policy de insert/update/delete aqui (nem grant, ver seção de GRANTS
+-- acima) — só service_role escreve, sempre por script/CLI, nunca por
+-- um usuário comum autenticado.
+-- ---------------------------------------------------------------------
+drop policy if exists municipios_leitura_publica on municipios;
+create policy municipios_leitura_publica on municipios
+  for select using (true);
+
+drop policy if exists municipio_fontes_leitura_publica on municipio_fontes;
+create policy municipio_fontes_leitura_publica on municipio_fontes
+  for select using (true);
+
+-- municipio_trilha: nenhuma policy — sem grant para authenticated (acima)
+-- e RLS enabled+forced já nega tudo por padrão. Só service_role lê/escreve.
+
+-- ---------------------------------------------------------------------
+-- 15. FREIO HUMANO (v10.8) — só quem tem alcada_aprovacao dá ciência,
 -- só de si mesmo, timestamp sempre do servidor.
 --
 -- A policy briefings_isolamento (seção 3) já libera UPDATE em qualquer
