@@ -10,17 +10,28 @@ com valor fora da referência, para verificação HUMANA.
 PRINCÍPIO PÉTREO (Manual Évora): o AFEx-g levanta indício e declara a base de
 comparação; a decisão é sempre humana. Este coletor NÃO conclui irregularidade.
 
-Usa só a biblioteca padrão (urllib + json). Saída: contratos_sorocaba.json
+Usa só a biblioteca padrão (urllib + json). Saída padrão:
+contratos_<slug-do-municipio>-<uf>.json (ex.: contratos_sorocaba-sp.json).
+
+Aceita município via linha de comando (Fase 7, Atlas Municipal) — rodar
+sem flags reproduz o comportamento de sempre (Sorocaba/SP), só o nome do
+arquivo de saída muda (antes era contratos_sorocaba.json fixo; agora
+sempre leva a UF, pra uma segunda cidade não sobrescrever a primeira).
+Este script continua sem ler o Atlas automaticamente — os CNPJs de
+órgãos ainda vêm de --cnpj-orgao, não de municipio_fontes; ligar os dois
+é trabalho futuro, não desta fase (adicionaria dependência de rede/auth
+a um script hoje zero-dependência e sem segredo nenhum).
 
 ATENÇÃO (pendência registrada no Blueprint): o endpoint/campos exatos da API de
 consulta do PNCP devem ser CONFIRMADOS na implementação real (a API evolui).
 Os nomes abaixo seguem o padrão público de consulta; ajuste no go-live.
 """
 
-import json, urllib.request, urllib.parse, statistics
+import argparse
+import json, re, unicodedata, urllib.request, urllib.parse, statistics
 from datetime import date, timedelta
 
-# ===================== CONFIG =====================
+# ===================== CONFIG (default; sobrescrito por argparse em main()) =====================
 MUNICIPIO   = "Sorocaba"
 UF          = "SP"
 IBGE_MUNIC  = "3552205"          # código IBGE de Sorocaba/SP
@@ -30,6 +41,11 @@ LIMIAR_DESVIO = 0.30             # 30% acima da mediana → indício para verifi
 BASE        = "https://pncp.gov.br/api/consulta/v1/contratos"
 TIMEOUT     = 30
 # ==================================================
+
+
+def _slug(texto):
+    t = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode()
+    return re.sub(r"-{2,}", "-", re.sub(r"[^a-zA-Z0-9]+", "-", t).strip("-").lower())
 
 
 def _get(url):
@@ -111,6 +127,22 @@ def sinalizar_indicios(contratos):
 
 
 def main():
+    global MUNICIPIO, UF, IBGE_MUNIC, CNPJ_ORGAO, DIAS, LIMIAR_DESVIO
+
+    ap = argparse.ArgumentParser(description="Coletor PNCP (AFEx-g · Fiscalização do Executivo)")
+    ap.add_argument("--municipio", default=MUNICIPIO)
+    ap.add_argument("--uf", default=UF)
+    ap.add_argument("--ibge", default=IBGE_MUNIC, help="código IBGE do município")
+    ap.add_argument("--cnpj-orgao", default=CNPJ_ORGAO, help="CNPJ do órgão, opcional")
+    ap.add_argument("--dias", type=int, default=DIAS)
+    ap.add_argument("--limiar", type=float, default=LIMIAR_DESVIO)
+    ap.add_argument("--saida", default=None, help="caminho do JSON de saída (default: contratos_<slug>.json)")
+    args = ap.parse_args()
+
+    MUNICIPIO, UF, IBGE_MUNIC = args.municipio, args.uf, args.ibge
+    CNPJ_ORGAO, DIAS, LIMIAR_DESVIO = args.cnpj_orgao, args.dias, args.limiar
+    saida = args.saida or f"contratos_{_slug(MUNICIPIO)}-{UF.lower()}.json"
+
     print("=" * 64)
     print("ÉVORA — Coletor PNCP (AFEx-g · Fiscalização do Executivo)")
     print(f"Município: {MUNICIPIO}/{UF} · janela: {DIAS} dias · limiar: {int(LIMIAR_DESVIO*100)}%")
@@ -126,9 +158,9 @@ def main():
         print(f"• {c['objeto'][:60]}  | R$ {c['valor']:,.2f}")
         print(f"  INDÍCIO (verificar, não acusação): {c['indicio']}")
 
-    with open("contratos_sorocaba.json", "w", encoding="utf-8") as f:
+    with open(saida, "w", encoding="utf-8") as f:
         json.dump(contratos, f, ensure_ascii=False, indent=2)
-    print("\n✓ Salvo em contratos_sorocaba.json (insumo do AFEx-g)")
+    print(f"\n✓ Salvo em {saida} (insumo do AFEx-g)")
     print("  Lembrete: indício é para verificação humana — nunca acusação.")
 
 
