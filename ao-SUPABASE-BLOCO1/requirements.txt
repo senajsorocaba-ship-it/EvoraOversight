@@ -1,6 +1,9 @@
-# Dependência única do motor de execução (evora_motor_execucao.py):
-# o SDK oficial da Anthropic, para chamar a API da Claude corretamente
-# (thinking adaptativo, effort, stop_reason=refusal, etc.).
+# Dependência do motor de execução (evora_motor_execucao.py) — obrigatória
+# ali. Desde a Fase 9, evora_atlas_municipal.py (`vereadores vigiar`/
+# `vigiar-todas`) também pode usá-la, mas só como FALLBACK: a extração
+# primária é por regex/heurística (sem IA), e só cai pra Claude se a
+# heurística não achar uma lista razoável de vereadores E ANTHROPIC_API_KEY
+# estiver configurada. Os demais subcomandos do Atlas não dependem disto.
 #
 # A parte que fala com o Supabase (PostgREST) usa só a biblioteca padrão do
 # Python (urllib) — não precisa de supabase-py nem de requests.

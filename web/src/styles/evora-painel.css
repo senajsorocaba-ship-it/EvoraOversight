@@ -357,9 +357,12 @@ tbody tr:last-child td{border-bottom:none}
 .login-card{background:linear-gradient(160deg,rgba(40,66,110,.55),rgba(21,36,56,.9));border:1px solid var(--line);border-radius:20px;box-shadow:0 30px 80px rgba(0,0,0,.5);padding:28px 26px;max-width:380px;width:100%}
 .login-card label{display:block;font-size:12.5px;font-weight:700;color:#c7d3e3;margin:0 0 6px}
 .login-card label:not(:first-child){margin-top:16px}
-.login-card input{width:100%;padding:11px 13px;border:1px solid var(--line-soft);border-radius:9px;font-size:14px;background:rgba(255,255,255,.05);color:#fff}
+.login-card input,.login-card select{width:100%;padding:11px 13px;border:1px solid var(--line-soft);border-radius:9px;font-size:14px;background:rgba(255,255,255,.05);color:#fff}
 .login-card input::placeholder{color:var(--mut)}
-.login-card input:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.login-card input:focus,.login-card select:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.login-card select{appearance:none;cursor:pointer}
+.login-card select:disabled{opacity:.5;cursor:default}
+.login-card select option{background:var(--navy-deep);color:#fff}
 .login-pass-wrap{position:relative}
 .login-pass-wrap input{padding-right:52px}
 .login-ver{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:auto;margin:0;padding:5px 10px;background:none;border:none;color:var(--goldl);font-size:11.5px;font-weight:700;text-transform:lowercase;cursor:pointer}
@@ -370,8 +373,8 @@ tbody tr:last-child td{border-bottom:none}
 .login-entrar:disabled{opacity:.6;cursor:default}
 
 .login-actions{display:flex;gap:10px;margin-top:12px}
-.login-actions button{flex:1;padding:10px;border:1px solid var(--line-soft);border-radius:9px;background:rgba(255,255,255,.04);color:#dbe4f0;font-size:12.5px;font-weight:700;cursor:pointer}
-.login-actions button:hover{border-color:var(--gold);color:#fff}
+.login-actions button,.login-cadastro-link{flex:1;padding:10px;border:1px solid var(--line-soft);border-radius:9px;background:rgba(255,255,255,.04);color:#dbe4f0;font-size:12.5px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;display:inline-block}
+.login-actions button:hover,.login-cadastro-link:hover{border-color:var(--gold);color:#fff}
 
 .login-err{margin-top:14px;font-size:12.5px;color:var(--redl);text-align:center}
 .login-aviso{margin-top:14px;font-size:12.5px;color:var(--goldl);text-align:center}

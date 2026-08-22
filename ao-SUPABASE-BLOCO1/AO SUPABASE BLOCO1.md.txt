@@ -4,7 +4,7 @@
 -- Versão:  v1.0 · 20/07/2026 · alinhado ao Manual Supremo v10.6
 -- =====================================================================
 --
--- Cria as 16 TABELAS OFICIAIS do núcleo. A contagem original (Anexo 14 da
+-- Cria as 18 TABELAS OFICIAIS do núcleo. A contagem original (Anexo 14 da
 -- v10.6) era 11; a Fase 6 do plano de testes acrescentou as tabelas 12 e 13
 -- para dar ingestão própria aos coletores Python (D:\motor\coletor_pncp_evora.py,
 -- imprensa_coletor_evora.py), que até então só escreviam em JSON fora do
@@ -16,13 +16,19 @@
 -- princípio nº 1 abaixo (não carregam tenant_id/mundo), mesma exceção já
 -- documentada em `tenants`. Ver evora_rls_mvp_v1.sql para a política de
 -- leitura aberta / escrita travada ao service_role que isso exige.
+-- A Fase 8 acrescentou a tabela 17 (`municipio_vereadores`), mesma família
+-- compartilhada, para dar suporte ao autocadastro de vereador (ver
+-- evora_auth_mvp_v1.sql para as funções que a consultam). A Fase 9
+-- acrescentou a tabela 18 (`municipio_vereadores_pendencias`) — fila de
+-- revisão do vigia de vereadores, nunca escrita direto por ele.
 --
 --   1. tenants                 7. compromissos              12. achados_fiscalizacao
 --   2. usuarios                8. atas                      13. mencoes_imprensa
 --   3. fontes                  9. desdobramentos            14. municipios
 --   4. briefings              10. desdobramento_eventos     15. municipio_fontes
 --   5. demandas               11. auditoria                 16. municipio_trilha
---   6. lugares
+--   6. lugares                                               17. municipio_vereadores
+--                                                             18. municipio_vereadores_pendencias
 --
 -- PRINCÍPIOS QUE ESTE SCHEMA RESPEITA (não quebrar sem decisão do fundador):
 --
@@ -448,10 +454,13 @@ create table if not exists municipios (
   diario_oficial         jsonb not null default '{}'::jsonb,  -- onde_publica, formato, plataforma, periodicidade, conector_com
   contratacoes           jsonb not null default '{}'::jsonb,  -- cnpjs_pncp[] {orgao, cnpj:{valor,fonte,selo,data}}
   mapa_politico_factual  jsonb not null default '{}'::jsonb,  -- ultima_eleicao_municipal, eleitos[] — sem ingestão nesta fase
+  vereadores_fonte_url   text,                                -- Fase 9: URL oficial da lista de vereadores, usada pelo vigia (vereadores vigiar)
   ativo                  boolean not null default true,
   criado_em              timestamptz not null default now(),
   atualizado_em          timestamptz not null default now()
 );
+
+comment on column municipios.vereadores_fonte_url is 'Fase 9 — URL da página oficial (Câmara Municipal) com a lista de vereadores, usada pelo vigia (vereadores vigiar). Configurada manualmente, uma vez por cidade, via vereadores configurar-fonte-url. Coluna real (não jsonb) porque vigiar-todas precisa consultar estruturalmente "toda cidade com URL configurada".';
 
 comment on table municipios is 'Atlas Municipal (Anexo 16) — camada compartilhada da plataforma, NÃO do tenant. Selo/procedência de cada campo vivem dentro do jsonb como {valor,fonte,selo,data}, mesmo formato do protótipo em arquivo que esta tabela substitui.';
 comment on column municipios.mapa_politico_factual is 'Estrutura presente para compatibilidade com o protótipo (Anexo 16 §4); SEM ingestão automatizada nesta fase — não existe coletor de TSE no projeto. Não fabricar dado aqui.';
@@ -515,6 +524,73 @@ create table if not exists municipio_trilha (
 comment on table municipio_trilha is 'Trilha imutável de edição do Atlas (Anexo 16). Só INSERT — nem RLS nem grant liberam UPDATE/DELETE para nenhuma role de cliente.';
 
 -- ---------------------------------------------------------------------
+-- 17. MUNICIPIO_VEREADORES — Fase 8 (autocadastro de vereador). Lista de
+-- vereadores em exercício por município, com e-mail institucional — a
+-- porta de entrada do cadastro público ("só se cadastra quem estiver
+-- nesta lista"). Mesma família compartilhada de municipio_fontes/
+-- municipio_trilha: sem tenant_id/mundo, só service_role escreve.
+--
+-- Diferente de municipio_fontes/municipios, esta tabela NÃO tem grant de
+-- select para `authenticated` nem `anon` (ver evora_rls_mvp_v1.sql) — o
+-- e-mail de um vereador nunca é exposto a um tenant qualquer via REST; o
+-- acesso acontece só através das funções security definer
+-- evora_verificar_vereador/evora_autocadastro_vereador (evora_auth_mvp_v1.sql),
+-- que respondem 1 e-mail por vez e nunca vazam a lista inteira.
+--
+-- Sem coletor de TSE/Câmara Municipal automatizado (cada Câmara tem seu
+-- próprio site) — esta tabela é semeada manualmente via
+-- evora_atlas_municipal.py (subcomando `vereadores`), com dado real
+-- conferido por um humano, mesmo modelo de municipio_fontes. Não fabricar
+-- linha aqui sem fonte real.
+-- ---------------------------------------------------------------------
+create table if not exists municipio_vereadores (
+  id            uuid primary key default gen_random_uuid(),
+  municipio_id  uuid not null references municipios(id),
+  nome          text not null,
+  email         text not null,
+  partido       text,
+  fonte         text,                                -- proveniência (ex.: "portal da Câmara, conferido em dd/mm/aaaa")
+  selo          evora_selo_cvi not null default 'a_confirmar',
+  ativo         boolean not null default true,       -- perdeu mandato/mudou de e-mail etc. (soft delete)
+  criado_em     timestamptz not null default now(),
+  atualizado_em timestamptz not null default now(),
+  constraint municipio_vereadores_verificado_exige_fonte
+    check (selo <> 'verificado' or fonte is not null)
+);
+
+comment on table municipio_vereadores is 'Fase 8 — lista de vereadores em exercício por município (e-mail institucional), porta de entrada do autocadastro. Camada compartilhada da plataforma, sem grant de select para authenticated/anon — só acessível via função security definer.';
+
+-- ---------------------------------------------------------------------
+-- 18. MUNICIPIO_VEREADORES_PENDENCIAS — Fase 9 (vigia de vereadores). Fila
+-- de revisão: o vigia (evora_atlas_municipal.py vereadores vigiar) revisita
+-- a URL de municipios.vereadores_fonte_url, usa a API da Claude pra extrair
+-- nome+e-mail da página, compara com municipio_vereadores e só REGISTRA a
+-- diferença aqui — nunca escreve direto na tabela que alimenta o
+-- autocadastro. Aplicar uma pendência é sempre uma ação humana explícita
+-- (vereadores pendencias aplicar), que reusa o mesmo _upsert_vereador da
+-- Fase 8. Sem isso, um vigia automático seria a própria trava
+-- anti-envenenamento sendo furada por uma extração de IA sem revisão.
+-- ---------------------------------------------------------------------
+create table if not exists municipio_vereadores_pendencias (
+  id             uuid primary key default gen_random_uuid(),
+  municipio_id   uuid not null references municipios(id),
+  tipo           text not null,   -- 'novo' | 'email_alterado' | 'possivel_saida'
+  nome           text,
+  email          text not null,
+  email_anterior text,            -- só para tipo='email_alterado'
+  detectado_em   timestamptz not null default now(),
+  status         text not null default 'pendente',  -- 'pendente' | 'aplicada' | 'rejeitada'
+  revisado_por   text,
+  revisado_em    timestamptz,
+  constraint municipio_vereadores_pendencias_tipo_valido
+    check (tipo in ('novo','email_alterado','possivel_saida')),
+  constraint municipio_vereadores_pendencias_status_valido
+    check (status in ('pendente','aplicada','rejeitada'))
+);
+
+comment on table municipio_vereadores_pendencias is 'Fase 9 — fila de revisão do vigia de vereadores. Nunca alimenta o autocadastro diretamente; aplicar é sempre ação humana via vereadores pendencias aplicar.';
+
+-- ---------------------------------------------------------------------
 -- ÍNDICES — consultas do dia a dia
 -- ---------------------------------------------------------------------
 create index if not exists idx_usuarios_tenant        on usuarios(tenant_id) where ativo;
@@ -532,6 +608,9 @@ create index if not exists idx_mencoes_imprensa_tenant on mencoes_imprensa(tenan
 create index if not exists idx_municipios_uf             on municipios(uf) where ativo;
 create index if not exists idx_municipio_fontes_municipio on municipio_fontes(municipio_id) where ativa;
 create index if not exists idx_municipio_trilha_municipio on municipio_trilha(municipio_id, ocorrido_em desc);
+create unique index if not exists idx_municipio_vereadores_email on municipio_vereadores (municipio_id, lower(email));
+create index if not exists idx_municipio_vereadores_municipio on municipio_vereadores(municipio_id) where ativo;
+create index if not exists idx_municipio_vereadores_pendencias_status on municipio_vereadores_pendencias(municipio_id, status);
 
 -- ---------------------------------------------------------------------
 -- ATUALIZAÇÃO AUTOMÁTICA DE atualizado_em
@@ -559,10 +638,16 @@ drop trigger if exists trg_municipio_fontes_atualizado on municipio_fontes;
 create trigger trg_municipio_fontes_atualizado before update on municipio_fontes
   for each row execute function evora_toca_atualizado_em();
 
+drop trigger if exists trg_municipio_vereadores_atualizado on municipio_vereadores;
+create trigger trg_municipio_vereadores_atualizado before update on municipio_vereadores
+  for each row execute function evora_toca_atualizado_em();
+
 -- =====================================================================
--- FIM DO SCHEMA — 16 tabelas criadas (11 originais + achados_fiscalizacao
+-- FIM DO SCHEMA — 18 tabelas criadas (11 originais + achados_fiscalizacao
 -- e mencoes_imprensa da Fase 6 + municipios/municipio_fontes/municipio_trilha
--- da Fase 7 — Atlas Municipal, Anexo 16).
+-- da Fase 7 — Atlas Municipal, Anexo 16 + municipio_vereadores da Fase 8 —
+-- autocadastro de vereador + municipio_vereadores_pendencias da Fase 9 —
+-- fila de revisão do vigia de vereadores).
 -- Próximo passo obrigatório: rodar evora_rls_mvp_v1.sql
 -- Sem o RLS, o banco NÃO tem isolamento entre clientes.
 -- =====================================================================

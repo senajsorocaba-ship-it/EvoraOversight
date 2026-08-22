@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
@@ -97,14 +98,9 @@ export default function LoginPage() {
           {aviso && <div className="login-aviso">{aviso}</div>}
 
           <div className="login-actions">
-            <button
-              type="button"
-              onClick={() =>
-                setAviso("Cadastro é feito pelo gestor do gabinete — fale com o suporte.")
-              }
-            >
+            <Link href="/cadastro" className="login-cadastro-link">
               Cadastre-se
-            </button>
+            </Link>
             <button
               type="button"
               onClick={() =>
