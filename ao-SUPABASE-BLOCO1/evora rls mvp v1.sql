@@ -96,6 +96,8 @@ alter table mencoes_imprensa      enable row level security;
 alter table municipios            enable row level security;
 alter table municipio_fontes      enable row level security;
 alter table municipio_trilha      enable row level security;
+alter table municipio_vereadores  enable row level security;
+alter table municipio_vereadores_pendencias enable row level security;
 
 -- Força o RLS inclusive para o dono das tabelas (defesa em profundidade)
 alter table tenants               force row level security;
@@ -121,6 +123,14 @@ alter table municipio_fontes      force row level security;
 -- nega tudo para authenticated/anon; force é redundante mas inofensivo,
 -- então mantemos por consistência com as demais.
 alter table municipio_trilha      force row level security;
+-- municipio_vereadores (Fase 8): mesmo caso de municipio_trilha — sem
+-- grant e sem policy, e-mail de vereador só é lido pelas funções security
+-- definer (evora_auth_mvp_v1.sql), nunca via REST direto.
+alter table municipio_vereadores  force row level security;
+-- municipio_vereadores_pendencias (Fase 9): mesmo caso — fila operacional
+-- interna do vigia, sem grant/policy para authenticated/anon, só
+-- service_role (a CLI) lê e escreve.
+alter table municipio_vereadores_pendencias force row level security;
 
 -- ---------------------------------------------------------------------
 -- GRANTS DE TABELA — obrigatório para a Data API (PostgREST) enxergar a
@@ -320,6 +330,13 @@ create policy municipio_fontes_leitura_publica on municipio_fontes
 
 -- municipio_trilha: nenhuma policy — sem grant para authenticated (acima)
 -- e RLS enabled+forced já nega tudo por padrão. Só service_role lê/escreve.
+
+-- municipio_vereadores (Fase 8): mesmo caso — nenhuma policy, nenhum grant
+-- para authenticated/anon. O e-mail de vereador é dado sensível o
+-- suficiente para nunca ser exposto via REST direto, nem em leitura; o
+-- autocadastro consulta esta tabela só através de
+-- evora_verificar_vereador/evora_autocadastro_vereador (evora_auth_mvp_v1.sql),
+-- funções security definer que respondem 1 e-mail por vez.
 
 -- ---------------------------------------------------------------------
 -- 15. FREIO HUMANO (v10.8) — só quem tem alcada_aprovacao dá ciência,
