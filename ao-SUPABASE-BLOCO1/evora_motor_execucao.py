@@ -63,6 +63,10 @@ VARIÁVEIS OPCIONAIS:
 USO:
     python evora_motor_execucao.py --tenant-id <uuid> --mundo gabinete
     python evora_motor_execucao.py --tenant-id <uuid> --mundo gabinete --data 2026-08-09
+    python evora_motor_execucao.py --todos --mundo gabinete
+        (processa todo tenant com ativo=true; usado pelo agendador diário,
+        .github/workflows/briefing-diario.yml — falha de um tenant não
+        interrompe os demais, só reflete no exit code no final)
 """
 
 import argparse
@@ -170,6 +174,15 @@ def buscar_tenant(cfg, tenant_id):
     if not linhas:
         raise SystemExit(f"Tenant {tenant_id} não encontrado.")
     return linhas[0]
+
+
+def listar_tenants_ativos(cfg):
+    """Usado pelo modo --todos. Mesmo filtro que evora_gerar_briefing_diario
+    já aplica sozinho (tenants.ativo) — não filtra por operacional/
+    ciencia_travas de propósito (ver evora_motor_execucao.py --help e
+    CLAUDE.md, seção do agendador, para o porquê)."""
+    url = f"{cfg['supabase_url']}/rest/v1/tenants?select=id,nome_autoridade&ativo=eq.true"
+    return _rest_request("GET", url, cfg["supabase_key"]) or []
 
 
 def atualizar_briefing(cfg, briefing_id, markdown, html_final, modelo, custo):
@@ -371,23 +384,18 @@ def renderizar_html(markdown, tenant, data_referencia):
 # ---------------------------------------------------------------------
 # 5. Orquestração
 # ---------------------------------------------------------------------
-def main():
-    ap = argparse.ArgumentParser(description="Motor de execução do briefing matinal (Évora Oversight)")
-    ap.add_argument("--tenant-id", required=True, help="uuid do tenant (gabinete)")
-    ap.add_argument("--mundo", required=True, choices=["gabinete", "campanha"])
-    ap.add_argument("--data", default=None, help="YYYY-MM-DD; default: hoje (servidor)")
-    args = ap.parse_args()
-
-    cfg = carregar_ambiente()
-
+def processar_tenant(cfg, tenant_id, mundo, data=None):
+    """Gera+redige+salva o briefing de UM tenant/mundo. Mesma lógica de
+    sempre (única lógica que existe) — usada tanto pelo modo --tenant-id
+    quanto, em loop, pelo modo --todos."""
     print("→ Gerando/atualizando o briefing via BLOCO 4 (evora_gerar_briefing_diario)...")
-    briefing_id = rpc_gerar_briefing(cfg, args.tenant_id, args.mundo, args.data)
+    briefing_id = rpc_gerar_briefing(cfg, tenant_id, mundo, data)
     print(f"  briefing_id: {briefing_id}")
 
     briefing = buscar_briefing(cfg, briefing_id)
-    tenant = buscar_tenant(cfg, args.tenant_id)
+    tenant = buscar_tenant(cfg, tenant_id)
     if not tenant.get("ativo", True):
-        raise SystemExit(f"Tenant {args.tenant_id} está inativo — abortando.")
+        raise SystemExit(f"Tenant {tenant_id} está inativo — abortando.")
 
     data_referencia = briefing["data_referencia"]
     blocos = briefing["blocos"]
@@ -404,7 +412,7 @@ def main():
     print("\n" + "=" * 64)
     print("✓ Briefing redigido e salvo.")
     print(f"  tenant:          {tenant['nome_autoridade']}")
-    print(f"  mundo:           {args.mundo}")
+    print(f"  mundo:           {mundo}")
     print(f"  data_referencia: {data_referencia}")
     print(f"  briefing_id:     {briefing_id}")
     print(f"  modelo:          {cfg['modelo']}")
@@ -417,6 +425,45 @@ def main():
         "script. Nenhum ato de efeito externo deve ocorrer até que um usuário com "
         "alçada_aprovacao aprove este briefing na aplicação."
     )
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Motor de execução do briefing matinal (Évora Oversight)")
+    alvo = ap.add_mutually_exclusive_group(required=True)
+    alvo.add_argument("--tenant-id", help="uuid de um único tenant (gabinete)")
+    alvo.add_argument(
+        "--todos",
+        action="store_true",
+        help="processa todo tenant com ativo=true (usado pelo agendador diário)",
+    )
+    ap.add_argument("--mundo", required=True, choices=["gabinete", "campanha"])
+    ap.add_argument("--data", default=None, help="YYYY-MM-DD; default: hoje (servidor)")
+    args = ap.parse_args()
+
+    cfg = carregar_ambiente()
+
+    if not args.todos:
+        processar_tenant(cfg, args.tenant_id, args.mundo, args.data)
+        return
+
+    tenants = listar_tenants_ativos(cfg)
+    print(f"→ {len(tenants)} tenant(s) ativo(s) encontrado(s).")
+    falharam = []
+    for t in tenants:
+        print(f"\n--- tenant {t['nome_autoridade']} ({t['id']}) ---")
+        try:
+            processar_tenant(cfg, t["id"], args.mundo, args.data)
+        except (SystemExit, Exception) as e:
+            # Exception, não só SystemExit: erros do SDK da Anthropic (ex.:
+            # anthropic.AuthenticationError) e qualquer outra falha inesperada
+            # também não podem derrubar o loop — um tenant ruim não pode
+            # impedir os demais de receber o briefing.
+            print(f"  ✗ FALHOU: {e}")
+            falharam.append((t["id"], t["nome_autoridade"]))
+
+    print(f"\n{len(tenants) - len(falharam)}/{len(tenants)} briefing(s) gerado(s) com sucesso.")
+    if falharam:
+        raise SystemExit(f"{len(falharam)} tenant(s) falharam: {falharam}")
 
 
 if __name__ == "__main__":
