@@ -1,5 +1,6 @@
 import { Topbar } from "@/components/topbar";
 import { FooterLegal } from "@/components/footer-legal";
+import { EnrolamentoFacial } from "@/components/enrolamento-facial";
 
 export default function ConfiguracoesPage() {
   return (
@@ -8,6 +9,7 @@ export default function ConfiguracoesPage() {
 
       <main className="content">
         <div className="cfg-grid">
+          <EnrolamentoFacial />
           <div className="cfg-card">
             <div className="cic" style={{ background: "rgba(43,84,120,.3)", color: "#8fbfe0" }}>
               <svg className="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /></svg>
