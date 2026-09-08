@@ -4,7 +4,7 @@
 -- Versão:  v1.0 · 20/07/2026 · alinhado ao Manual Supremo v10.6
 -- =====================================================================
 --
--- Cria as 18 TABELAS OFICIAIS do núcleo. A contagem original (Anexo 14 da
+-- Cria as 24 TABELAS OFICIAIS do núcleo. A contagem original (Anexo 14 da
 -- v10.6) era 11; a Fase 6 do plano de testes acrescentou as tabelas 12 e 13
 -- para dar ingestão própria aos coletores Python (D:\motor\coletor_pncp_evora.py,
 -- imprensa_coletor_evora.py), que até então só escreviam em JSON fora do
@@ -20,14 +20,23 @@
 -- compartilhada, para dar suporte ao autocadastro de vereador (ver
 -- evora_auth_mvp_v1.sql para as funções que a consultam). A Fase 9
 -- acrescentou a tabela 18 (`municipio_vereadores_pendencias`) — fila de
--- revisão do vigia de vereadores, nunca escrita direto por ele.
+-- revisão do vigia de vereadores, nunca escrita direto por ele. A Fase 10
+-- (Manual v10.9.1) acrescentou as tabelas 19-22 — o FARUS, o acervo de
+-- informação verificada compartilhado por MUNICÍPIO (não por cidade do
+-- tenant; sucessor do antigo "Veritas-Dados"), adaptado de `evora farus
+-- f1.sql` pra conviver com as 18 tabelas já existentes (ver a seção "FARUS"
+-- do CLAUDE.md pra o que foi adaptado e o que ainda se sobrepõe com
+-- achados_fiscalizacao/mencoes_imprensa/municipio_fontes, de propósito não
+-- resolvido nesta fase). A Fase 11 acrescentou as tabelas 23-24 — o Aegis
+-- A0, cofre de dado sensível (CPF, data de nascimento), adaptado de `evora
+-- aegis a0.sql`.
 --
---   1. tenants                 7. compromissos              12. achados_fiscalizacao
---   2. usuarios                8. atas                      13. mencoes_imprensa
---   3. fontes                  9. desdobramentos            14. municipios
---   4. briefings              10. desdobramento_eventos     15. municipio_fontes
---   5. demandas               11. auditoria                 16. municipio_trilha
---   6. lugares                                               17. municipio_vereadores
+--   1. tenants                 7. compromissos              12. achados_fiscalizacao        19. farus_territorios
+--   2. usuarios                8. atas                      13. mencoes_imprensa            20. farus_tenant_territorios
+--   3. fontes                  9. desdobramentos            14. municipios                  21. farus_fontes
+--   4. briefings              10. desdobramento_eventos     15. municipio_fontes            22. farus_itens
+--   5. demandas               11. auditoria                 16. municipio_trilha            23. aegis_cofre
+--   6. lugares                                               17. municipio_vereadores        24. aegis_acessos
 --                                                             18. municipio_vereadores_pendencias
 --
 -- PRINCÍPIOS QUE ESTE SCHEMA RESPEITA (não quebrar sem decisão do fundador):
@@ -83,6 +92,56 @@ exception when duplicate_object then null; end $$;
 do $$ begin
   create type evora_status_desdobramento as enum
     ('aberto', 'em_andamento', 'concluido', 'cancelado');
+exception when duplicate_object then null; end $$;
+
+-- Fase 10/11 (Manual v10.9.1) — tipos do FARUS e do Aegis A0, adaptados de
+-- `evora farus f1.sql`/`evora aegis a0.sql` sem alteração de valores.
+
+-- Ciclo de Vida da Informação (Manual, DA-0002). Só 'confirmado' e
+-- 'corroborado' sustentam afirmação de briefing.
+do $$ begin
+  create type farus_estado as enum (
+    'confirmado', 'corroborado', 'indicado', 'inferencia',
+    'hipotese', 'conflitante', 'desatualizado', 'nao_verificado'
+  );
+exception when duplicate_object then null; end $$;
+
+-- De onde veio o registro — define se pode ou não ser compartilhado.
+do $$ begin
+  create type farus_origem as enum (
+    'coleta_programada', 'descoberta_radar', 'interesse_tenant', 'demanda_tenant'
+  );
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type farus_especie as enum (
+    'ato_oficial', 'contratacao', 'materia', 'norma', 'documento'
+  );
+exception when duplicate_object then null; end $$;
+
+-- Ciclo de vida da fonte: descoberta -> observada -> configurada (decisão
+-- D6, Anexo 16) — só 'configurada' sustenta afirmação.
+do $$ begin
+  create type farus_estado_fonte as enum (
+    'descoberta', 'observada', 'configurada', 'suspensa', 'recusada'
+  );
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type evora_plano as enum ('municipal', 'estadual', 'nacional');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type aegis_especie as enum (
+    'cpf', 'data_nascimento', 'documento_identidade', 'dado_saude', 'dado_seguranca'
+  );
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type aegis_motivo_leitura as enum (
+    'conferencia_identidade', 'emissao_contrato', 'emissao_nota_fiscal',
+    'obrigacao_legal', 'pedido_do_titular', 'ordem_judicial'
+  );
 exception when duplicate_object then null; end $$;
 
 -- ---------------------------------------------------------------------
@@ -590,6 +649,188 @@ create table if not exists municipio_vereadores_pendencias (
 
 comment on table municipio_vereadores_pendencias is 'Fase 9 — fila de revisão do vigia de vereadores. Nunca alimenta o autocadastro diretamente; aplicar é sempre ação humana via vereadores pendencias aplicar.';
 
+-- =====================================================================
+-- FASE 10 (Manual v10.9.1) — FARUS: Acervo Territorial de Informação
+-- Verificada. Sucessor do "Veritas-Dados" citado desde a v7.7. Adaptado de
+-- `evora farus f1.sql` (entregue já testado 10/10, ver `evora farus teste
+-- aceite.sql`) — conteúdo idêntico ao entregue, só a posição no arquivo
+-- muda (aqui junto das demais tabelas, RLS em evora_rls_mvp_v1.sql).
+--
+-- EXCEÇÃO AO PRINCÍPIO Nº 1 (mesma família de `municipios`/`tenants`): o
+-- acervo é compartilhado por MUNICÍPIO, não por tenant — mas, ao contrário
+-- do Atlas Municipal (leitura 100% aberta), aqui um item pode pertencer a
+-- UM tenant (pesquisa privada, `origem_aquisicao` em interesse_tenant/
+-- demanda_tenant) — a fronteira exata é o campo `origem_aquisicao` +
+-- `tenant_origem`, aplicada na política de RLS de `farus_itens`.
+--
+-- SOBREPOSIÇÃO CONHECIDA, NÃO RESOLVIDA NESTA FASE: achados_fiscalizacao
+-- (tabela 12), mencoes_imprensa (tabela 13) e municipio_fontes (tabela 15)
+-- já cobrem parte do que o FARUS se propõe a fazer. Nenhum coletor deste
+-- repositório (evora_ingestao_coletores.py, evora_coletor_mencoes.py)
+-- grava em farus_itens ainda — continuam gravando nas tabelas antigas, que
+-- são o que alimenta o briefing de verdade hoje. Reconciliar as duas
+-- camadas é uma decisão futura do dono, não implícita nesta integração.
+-- =====================================================================
+
+alter table tenants add column if not exists plano evora_plano not null default 'municipal';
+comment on column tenants.plano is 'Fase 10 — nível contratado (Manual E12). Define o alcance territorial do radar. Todo nível contém o inferior.';
+
+-- ---------------------------------------------------------------------
+-- 19. FARUS_TERRITORIOS — municípios sob monitoramento do FARUS. Cada um é
+-- coletado UMA VEZ e serve todos os tenants daquela cidade (mesma economia
+-- de escala do Atlas Municipal, mas para o acervo dinâmico, não estático).
+-- ---------------------------------------------------------------------
+create table if not exists farus_territorios (
+  id              uuid primary key default gen_random_uuid(),
+  codigo_ibge     integer unique,
+  municipio       text        not null,
+  uf              char(2)     not null,
+  regiao_imediata text,
+  ativo           boolean     not null default true,
+  criado_em       timestamptz not null default now(),
+  constraint farus_territorio_uf_valida check (uf ~ '^[A-Z]{2}$')
+);
+
+comment on table farus_territorios is 'Fase 10 — municípios sob monitoramento do FARUS. Compartilhado da plataforma, não do tenant.';
+
+-- ---------------------------------------------------------------------
+-- 20. FARUS_TENANT_TERRITORIOS — quais territórios cada tenant acompanha.
+-- Determina qual acervo compartilhado cada cliente enxerga.
+-- ---------------------------------------------------------------------
+create table if not exists farus_tenant_territorios (
+  tenant_id     uuid not null references tenants(id) on delete cascade,
+  territorio_id uuid not null references farus_territorios(id) on delete restrict,
+  principal     boolean not null default false,
+  incluido_em   timestamptz not null default now(),
+  incluido_por  text,
+  primary key (tenant_id, territorio_id)
+);
+
+comment on table farus_tenant_territorios is 'Fase 10 — vínculo tenant x território do FARUS.';
+
+-- ---------------------------------------------------------------------
+-- 21. FARUS_FONTES — fontes do acervo (ato oficial, contratação, imprensa,
+-- norma). Ciclo de vida descoberta -> observada -> configurada; só
+-- 'configurada' sustenta afirmação (decisão D6, Anexo 16), trava no banco.
+-- ---------------------------------------------------------------------
+create table if not exists farus_fontes (
+  id             uuid primary key default gen_random_uuid(),
+  territorio_id  uuid not null references farus_territorios(id) on delete restrict,
+  nome           text not null,
+  especie        farus_especie not null,
+  url            text,
+  nivel          text,
+  estado         farus_estado_fonte not null default 'descoberta',
+  cnpj           text,
+  cnae           text,
+  evidencia_cobertura text,
+  descoberta_por text,
+  liberada_por   text,
+  liberada_em    timestamptz,
+  ultima_coleta  timestamptz,
+  criado_em      timestamptz not null default now(),
+  constraint farus_fonte_liberacao_humana check (
+    estado <> 'configurada' or (liberada_por is not null and liberada_em is not null)
+  )
+);
+
+comment on table farus_fontes is 'Fase 10 — fontes do acervo FARUS, por território.';
+comment on constraint farus_fonte_liberacao_humana on farus_fontes is 'Decisão D6: nenhuma fonte alimenta afirmação sem liberação humana registrada. Trava no banco.';
+
+-- ---------------------------------------------------------------------
+-- 22. FARUS_ITENS — o acervo em si. Compartilhado quando origem_aquisicao é
+-- coleta_programada/descoberta_radar (tenant_origem obrigatoriamente nulo);
+-- privado do tenant quando é interesse_tenant/demanda_tenant (tenant_origem
+-- obrigatório). Retenção indeterminada para o acervo público (decisão do
+-- fundador, 20/07/2026) — trigger abaixo impede exclusão.
+-- ---------------------------------------------------------------------
+create table if not exists farus_itens (
+  id               uuid primary key default gen_random_uuid(),
+  territorio_id    uuid not null references farus_territorios(id) on delete restrict,
+  origem_aquisicao farus_origem not null,
+  tenant_origem    uuid references tenants(id) on delete cascade,
+  fonte_id         uuid references farus_fontes(id) on delete set null,
+  especie          farus_especie not null,
+  url              text,
+  titulo           text not null,
+  conteudo         text,
+  publicado_em     date,
+  capturado_em     timestamptz not null default now(),
+  estado           farus_estado not null default 'nao_verificado',
+  verificado_por   text,
+  verificado_em    timestamptz,
+  hash_conteudo    bytea not null,
+  retencao_indeterminada boolean not null default true,
+  criado_em        timestamptz not null default now(),
+
+  -- TRAVA 1: registro compartilhável não pode ter dono; registro de tenant deve ter.
+  constraint farus_item_origem_coerente check (
+    (origem_aquisicao in ('coleta_programada','descoberta_radar') and tenant_origem is null)
+    or
+    (origem_aquisicao in ('interesse_tenant','demanda_tenant') and tenant_origem is not null)
+  ),
+
+  -- TRAVA 2: só sustenta afirmação o que foi verificado por alguém.
+  constraint farus_item_verificacao_registrada check (
+    estado not in ('confirmado','corroborado')
+    or (verificado_por is not null and verificado_em is not null)
+  )
+);
+
+comment on table farus_itens is 'Fase 10 — o acervo FARUS. Compartilhado por município ou privado do tenant, conforme origem_aquisicao.';
+comment on constraint farus_item_origem_coerente on farus_itens is 'Fronteira do compartilhamento: acervo público não tem dono; pesquisa de tenant nunca é compartilhada.';
+comment on column farus_itens.hash_conteudo is 'sha256 de titulo||conteudo normalizados (farus_hash). Base da deduplicação por território.';
+
+-- =====================================================================
+-- FASE 11 (Manual v10.9.1) — AEGIS A0: cofre de dado sensível (CPF, data
+-- de nascimento). Adaptado de `evora aegis a0.sql` (entregue já testado
+-- 10/10, ver `evora aegis teste aceite.sql`).
+--
+-- A regra que o módulo existe pra garantir: se o cofre precisar abrir na
+-- operação de rotina, não é cofre. Nada no login, no briefing ou nas telas
+-- pode depender do conteúdo cofrado — só da máscara (aegis_mascara).
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 23. AEGIS_COFRE — separado de `usuarios` de propósito: a tela de equipe
+-- lê `usuarios` o tempo todo e nunca deve tocar no cofre. Sem política de
+-- SELECT nenhuma (ver evora_rls_mvp_v1.sql) — a única leitura é a função
+-- aegis_ler, que exige motivo declarado e grava o acesso antes de devolver.
+-- ---------------------------------------------------------------------
+create table if not exists aegis_cofre (
+  id             uuid primary key default gen_random_uuid(),
+  tenant_id      uuid not null references tenants(id) on delete cascade,
+  usuario_id     uuid not null references usuarios(id) on delete cascade,
+  especie        aegis_especie not null,
+  valor          text not null,
+  mascara        text not null,
+  registrado_em  timestamptz not null default now(),
+  registrado_por text not null,
+  constraint aegis_cofre_unico unique (usuario_id, especie),
+  constraint aegis_mascara_parcial check (mascara <> valor),
+  constraint aegis_mascara_oculta check (mascara like '%•%' or mascara like '%*%')
+);
+
+comment on table aegis_cofre is 'Fase 11 — cofre de dado sensível (N5). Separado de usuarios de propósito: a operação de rotina nunca o lê.';
+comment on column aegis_cofre.mascara is 'Forma de exibição, guardada fora do conteúdo. É o que a tela usa — assim o cofre permanece fechado.';
+
+-- ---------------------------------------------------------------------
+-- 24. AEGIS_ACESSOS — registro de LEITURA do cofre (não só alteração). Em
+-- dado sensível, quem viu importa tanto quanto quem alterou. Append-only
+-- (trigger abaixo).
+-- ---------------------------------------------------------------------
+create table if not exists aegis_acessos (
+  id            uuid primary key default gen_random_uuid(),
+  cofre_id      uuid not null references aegis_cofre(id) on delete cascade,
+  tenant_id     uuid not null references tenants(id) on delete cascade,
+  quem          text not null,
+  motivo        aegis_motivo_leitura not null,
+  justificativa text,
+  ocorrido_em   timestamptz not null default now()
+);
+
+comment on table aegis_acessos is 'Fase 11 — registro de leitura do cofre. Append-only.';
+
 -- ---------------------------------------------------------------------
 -- ÍNDICES — consultas do dia a dia
 -- ---------------------------------------------------------------------
@@ -611,6 +852,82 @@ create index if not exists idx_municipio_trilha_municipio on municipio_trilha(mu
 create unique index if not exists idx_municipio_vereadores_email on municipio_vereadores (municipio_id, lower(email));
 create index if not exists idx_municipio_vereadores_municipio on municipio_vereadores(municipio_id) where ativo;
 create index if not exists idx_municipio_vereadores_pendencias_status on municipio_vereadores_pendencias(municipio_id, status);
+
+-- Fase 10/11 — FARUS e Aegis
+create unique index if not exists ix_farus_territorio_municipio on farus_territorios (lower(municipio), uf);
+create index if not exists ix_farus_fontes_territorio on farus_fontes (territorio_id, estado);
+create unique index if not exists ix_farus_itens_dedup on farus_itens (territorio_id, hash_conteudo);
+create index if not exists ix_farus_itens_busca on farus_itens (territorio_id, especie, publicado_em desc);
+create index if not exists ix_farus_itens_tenant on farus_itens (tenant_origem) where tenant_origem is not null;
+create index if not exists ix_aegis_acessos_cofre on aegis_acessos (cofre_id, ocorrido_em desc);
+
+-- ---------------------------------------------------------------------
+-- FARUS — REGRA ÚNICA DE DEDUPLICAÇÃO E RETENÇÃO
+-- ---------------------------------------------------------------------
+-- Centralizada para que coletor e banco nunca divirjam (Fase 10). Normaliza
+-- espaços, caixa e acentuação antes de calcular o hash.
+--
+-- POR QUE `translate` E NÃO `unaccent`: `unaccent` é STABLE (depende de um
+-- dicionário que pode ser alterado), não IMMUTABLE. Marcar como IMMUTABLE
+-- uma função que chama STABLE é aceito pelo PostgreSQL — e corrompe
+-- silenciosamente qualquer índice construído sobre ela (achado real,
+-- registrado no Anexo 23 da v10.9.1, corrigido antes de chegar aqui).
+create extension if not exists pgcrypto;
+
+create or replace function farus_hash(p_titulo text, p_conteudo text)
+returns bytea
+language sql
+immutable
+as $$
+  select digest(
+    regexp_replace(
+      translate(
+        lower(coalesce(p_titulo,'') || ' ' || coalesce(p_conteudo,'')),
+        'áàâãäéèêëíìîïóòôõöúùûüçñ',
+        'aaaaaeeeeiiiiooooouuuucn'
+      ),
+      '\s+', ' ', 'g'
+    ),
+    'sha256'
+  );
+$$;
+
+comment on function farus_hash(text,text) is 'Fase 10 — regra única de deduplicação. Coletor e banco devem usar esta função, nunca calcular hash à parte.';
+
+-- Decisão do fundador de 20/07/2026: acervo público verificado tem retenção
+-- indeterminada. Trigger impede exclusão acidental por rotina futura.
+create or replace function farus_impedir_exclusao_acervo()
+returns trigger
+language plpgsql
+as $$
+begin
+  if old.retencao_indeterminada
+     and old.origem_aquisicao in ('coleta_programada','descoberta_radar') then
+    raise exception
+      'Acervo público com retenção indeterminada não pode ser excluído (item %). '
+      'Para remover, desmarque retencao_indeterminada com justificativa registrada.',
+      old.id;
+  end if;
+  return old;
+end $$;
+
+drop trigger if exists trg_farus_retencao on farus_itens;
+create trigger trg_farus_retencao
+  before delete on farus_itens
+  for each row execute function farus_impedir_exclusao_acervo();
+
+-- Trilha do Aegis é registro perene: não se altera nem se apaga (Fase 11,
+-- mesma disciplina de evora_auditoria_imutavel).
+create or replace function aegis_trilha_imutavel()
+returns trigger language plpgsql as $$
+begin
+  raise exception 'Registro de acesso ao cofre é imutável. Tentativa de % rejeitada.', tg_op;
+end $$;
+
+drop trigger if exists trg_aegis_acessos_imutavel on aegis_acessos;
+create trigger trg_aegis_acessos_imutavel
+  before update or delete on aegis_acessos
+  for each row execute function aegis_trilha_imutavel();
 
 -- ---------------------------------------------------------------------
 -- ATUALIZAÇÃO AUTOMÁTICA DE atualizado_em
@@ -643,11 +960,13 @@ create trigger trg_municipio_vereadores_atualizado before update on municipio_ve
   for each row execute function evora_toca_atualizado_em();
 
 -- =====================================================================
--- FIM DO SCHEMA — 18 tabelas criadas (11 originais + achados_fiscalizacao
+-- FIM DO SCHEMA — 24 tabelas criadas (11 originais + achados_fiscalizacao
 -- e mencoes_imprensa da Fase 6 + municipios/municipio_fontes/municipio_trilha
 -- da Fase 7 — Atlas Municipal, Anexo 16 + municipio_vereadores da Fase 8 —
 -- autocadastro de vereador + municipio_vereadores_pendencias da Fase 9 —
--- fila de revisão do vigia de vereadores).
+-- fila de revisão do vigia de vereadores + farus_territorios/
+-- farus_tenant_territorios/farus_fontes/farus_itens da Fase 10 — FARUS,
+-- Manual v10.9.1 + aegis_cofre/aegis_acessos da Fase 11 — Aegis A0).
 -- Próximo passo obrigatório: rodar evora_rls_mvp_v1.sql
 -- Sem o RLS, o banco NÃO tem isolamento entre clientes.
 -- =====================================================================

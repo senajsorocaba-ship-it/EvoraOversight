@@ -89,7 +89,7 @@ export default function CadastroPage() {
     if (!match) {
       setElegivel(false);
       setErro(
-        `Este e-mail não consta na lista de vereadores verificados de ${municipioNome} — fale com o suporte.`
+        `Este e-mail não está autorizado a se cadastrar como vereador(a) de ${municipioNome}. Entre em contato com o suporte.`
       );
       return;
     }

@@ -98,6 +98,12 @@ alter table municipio_fontes      enable row level security;
 alter table municipio_trilha      enable row level security;
 alter table municipio_vereadores  enable row level security;
 alter table municipio_vereadores_pendencias enable row level security;
+alter table farus_territorios        enable row level security;
+alter table farus_tenant_territorios enable row level security;
+alter table farus_fontes             enable row level security;
+alter table farus_itens              enable row level security;
+alter table aegis_cofre              enable row level security;
+alter table aegis_acessos            enable row level security;
 
 -- Força o RLS inclusive para o dono das tabelas (defesa em profundidade)
 alter table tenants               force row level security;
@@ -131,6 +137,16 @@ alter table municipio_vereadores  force row level security;
 -- interna do vigia, sem grant/policy para authenticated/anon, só
 -- service_role (a CLI) lê e escreve.
 alter table municipio_vereadores_pendencias force row level security;
+-- FARUS/Aegis (Fases 10/11, Manual v10.9.1): mesma disciplina de sempre —
+-- ver seções 16 e 17 mais abaixo para as policies (FARUS tem leitura
+-- condicional por território+propriedade; Aegis não tem policy de select
+-- nenhuma no cofre, de propósito).
+alter table farus_territorios        force row level security;
+alter table farus_tenant_territorios force row level security;
+alter table farus_fontes             force row level security;
+alter table farus_itens              force row level security;
+alter table aegis_cofre              force row level security;
+alter table aegis_acessos            force row level security;
 
 -- ---------------------------------------------------------------------
 -- GRANTS DE TABELA — obrigatório para a Data API (PostgREST) enxergar a
@@ -168,6 +184,24 @@ grant select on municipios, municipio_fontes to authenticated;
 -- visualizador (nenhuma UI foi construída na Fase 7). service_role
 -- continua com acesso total via a linha abaixo. Reabrir isto é uma linha,
 -- se/quando um leitor de trilha for construído.
+
+-- FARUS (Fase 10, Manual v10.9.1): leitura para authenticated — a policy
+-- (seção 16) é quem decide QUAIS linhas (território do tenant + público-ou-
+-- próprio). farus_tenant_territorios também recebe insert/delete porque é
+-- o próprio tenant quem inclui/remove um território que acompanha — nunca
+-- update (trocar de território é remover e incluir de novo, mais simples
+-- de auditar). Escrita do acervo (farus_itens/farus_fontes) é só do motor
+-- (service_role) — nenhum insert/update/delete para authenticated aqui.
+grant select on farus_territorios, farus_fontes, farus_itens to authenticated;
+grant select, insert, delete on farus_tenant_territorios to authenticated;
+
+-- Aegis A0 (Fase 11): SEM grant nenhum em aegis_cofre para
+-- authenticated/anon — a ausência é a proteção (não existe select direto
+-- possível nem que a policy quisesse liberar). aegis_acessos (a trilha de
+-- QUEM leu o cofre) tem select — a autoridade pode auditar os acessos do
+-- próprio gabinete (policy na seção 17); insert só via aegis_ler
+-- (security definer, já grava sozinha).
+grant select on aegis_acessos to authenticated;
 
 -- service_role ignora RLS por design (ver nota no topo deste arquivo) — o
 -- motor do briefing e outros jobs de servidor precisam de acesso irrestrito
@@ -382,6 +416,158 @@ drop trigger if exists trg_briefings_ciencia on briefings;
 create trigger trg_briefings_ciencia
   before update on briefings
   for each row execute function evora_valida_ciencia_briefing();
+
+-- ---------------------------------------------------------------------
+-- 16. FARUS (Fase 10, Manual v10.9.1) — a exceção controlada. Compartilha
+-- por MUNICÍPIO (como o Atlas, seção 14), mas — diferente do Atlas — um
+-- item pode pertencer a um tenant específico (pesquisa privada). Adaptado
+-- de `evora farus f1.sql`, já testado 10/10 (ver `evora farus teste
+-- aceite.sql`); conteúdo idêntico ao entregue.
+-- ---------------------------------------------------------------------
+
+-- Territórios que o tenant da sessão acompanha.
+create or replace function farus_territorios_do_tenant()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select tt.territorio_id
+  from farus_tenant_territorios tt
+  where tt.tenant_id = evora_tenant_atual();
+$$;
+
+drop policy if exists farus_territorios_leitura on farus_territorios;
+create policy farus_territorios_leitura on farus_territorios
+  for select to authenticated
+  using (id in (select farus_territorios_do_tenant()));
+
+drop policy if exists farus_tt_isolamento on farus_tenant_territorios;
+create policy farus_tt_isolamento on farus_tenant_territorios
+  for all to authenticated
+  using (tenant_id = evora_tenant_atual())
+  with check (tenant_id = evora_tenant_atual());
+
+drop policy if exists farus_fontes_leitura on farus_fontes;
+create policy farus_fontes_leitura on farus_fontes
+  for select to authenticated
+  using (territorio_id in (select farus_territorios_do_tenant()));
+
+-- A política mais delicada do módulo: território do tenant E (item público
+-- OU do próprio tenant) — a segunda condição é o que impede um cliente ver
+-- a pesquisa privada que outro cliente da mesma cidade mandou fazer.
+drop policy if exists farus_itens_leitura on farus_itens;
+create policy farus_itens_leitura on farus_itens
+  for select to authenticated
+  using (
+    territorio_id in (select farus_territorios_do_tenant())
+    and (
+      tenant_origem is null
+      or tenant_origem = evora_tenant_atual()
+    )
+  );
+
+comment on policy farus_itens_leitura on farus_itens is
+  'Exceção controlada ao isolamento: compartilha por município, mas nunca o contexto de outro tenant.';
+
+-- Escrita do acervo é do motor (service_role) — nenhuma policy de
+-- insert/update/delete para authenticated em farus_fontes/farus_itens
+-- (mesmo grant-level já reforça isso, seção de GRANTS acima).
+
+-- ---------------------------------------------------------------------
+-- 17. AEGIS A0 (Fase 11, Manual v10.9.1) — cofre de dado sensível. Adaptado
+-- de `evora aegis a0.sql`, já testado 10/10 (ver `evora aegis teste
+-- aceite.sql`). ÚNICA ADAPTAÇÃO REAL: o arquivo entregue usa `auth.uid()`
+-- para achar o usuário autenticado; este projeto nunca usa esse helper —
+-- usa `evora_claims() ->> 'sub'`, o mesmo idioma já auditado em
+-- evora_valida_ciencia_briefing (seção 15 acima). A trava em si não muda:
+-- só autoridade/chefe_gabinete abrem o cofre.
+--
+-- NENHUMA policy de SELECT em aegis_cofre para authenticated — a ausência
+-- é a proteção, não esquecimento (mesmo espírito de municipio_vereadores,
+-- seção 14). Ler só pela função aegis_ler.
+-- ---------------------------------------------------------------------
+
+create or replace function aegis_ler(
+  p_usuario_id uuid,
+  p_especie    aegis_especie,
+  p_motivo     aegis_motivo_leitura,
+  p_justificativa text default null
+)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_tenant uuid := evora_tenant_atual();
+  v_id     uuid;
+  v_valor  text;
+  v_papel  text;
+begin
+  if v_tenant is null then
+    raise exception 'Sem identidade no token.';
+  end if;
+
+  select u.papel::text into v_papel
+  from usuarios u
+  where u.auth_user_id = nullif(evora_claims() ->> 'sub', '')::uuid
+    and u.ativo;
+
+  if v_papel is null or v_papel not in ('autoridade','chefe_gabinete') then
+    raise exception 'Papel % não tem alçada para abrir o cofre.', coalesce(v_papel,'indefinido');
+  end if;
+
+  select c.id, c.valor into v_id, v_valor
+  from aegis_cofre c
+  where c.usuario_id = p_usuario_id
+    and c.especie = p_especie
+    and c.tenant_id = v_tenant;
+
+  if v_id is null then
+    raise exception 'Não há registro desta espécie para este usuário neste gabinete.';
+  end if;
+
+  -- Grava ANTES de devolver: leitura sem registro não existe.
+  insert into aegis_acessos (cofre_id, tenant_id, quem, motivo, justificativa)
+  values (v_id, v_tenant, coalesce(evora_claims() ->> 'sub', 'desconhecido'), p_motivo, p_justificativa);
+
+  return v_valor;
+end $$;
+
+comment on function aegis_ler is
+  'Única porta de leitura do cofre. Exige motivo declarado e grava o acesso antes de devolver o valor.';
+
+-- Leitura da máscara — livre, porque não revela nada. Não abre o cofre e
+-- não gera registro de acesso; é o que as telas consomem.
+create or replace function aegis_mascara(p_usuario_id uuid, p_especie aegis_especie)
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select c.mascara
+  from aegis_cofre c
+  where c.usuario_id = p_usuario_id
+    and c.especie = p_especie
+    and c.tenant_id = evora_tenant_atual();
+$$;
+
+comment on function aegis_mascara is
+  'Devolve apenas a forma mascarada. É o que a tela consome — o cofre permanece fechado.';
+
+-- A autoridade pode consultar QUEM leu o cofre do seu próprio gabinete.
+drop policy if exists aegis_acessos_leitura on aegis_acessos;
+create policy aegis_acessos_leitura on aegis_acessos
+  for select to authenticated
+  using (tenant_id = evora_tenant_atual());
+
+grant execute on function aegis_ler(uuid, aegis_especie, aegis_motivo_leitura, text) to authenticated;
+grant execute on function aegis_mascara(uuid, aegis_especie) to authenticated;
+revoke execute on function aegis_ler(uuid, aegis_especie, aegis_motivo_leitura, text) from anon;
+revoke execute on function aegis_mascara(uuid, aegis_especie) from anon;
 
 -- =====================================================================
 -- TESTE DE ACEITE — a prova que vira argumento de venda
