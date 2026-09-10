@@ -79,6 +79,7 @@ declare
   v_fontes       jsonb;
   v_achados      jsonb;
   v_tem_mencoes  boolean;
+  v_tem_farus    boolean;
   v_movimento    jsonb;
   v_blocos       jsonb;
 begin
@@ -148,15 +149,23 @@ begin
   )
   select coalesce(jsonb_agg(to_jsonb(d)), '[]'::jsonb) into v_demandas from d;
 
-  -- ---- Bloco 6: Imprensa — fontes declaradas + manchetes reais --------
+  -- ---- Bloco 6: Imprensa — fontes declaradas + manchetes reais + FARUS ---
   -- O Anexo 12 (saídas do AIM-g) inclui "lista de fontes declaradas"
   -- (tabela `fontes`) e, desde a Fase 6, as manchetes que o coletor de
-  -- imprensa realmente encontrou (tabela `mencoes_imprensa`). Cada item
-  -- carrega 'tipo' para o consumidor (a Bia) distinguir os dois sem
-  -- precisar de uma segunda chave no bloco.
+  -- imprensa realmente encontrou (tabela `mencoes_imprensa`). Desde a
+  -- Fase 10+ (Manual v10.9.1), soma-se o acervo do FARUS
+  -- (`farus_itens`) — item geral sobre o TERRITÓRIO do tenant (município
+  -- inteiro), coletado por `evora_coletor_farus.py` sem depender de
+  -- catálogo de fonte pré-aprovado (ver docstring daquele script). Cada
+  -- item carrega 'tipo' para o consumidor (a Bia) distinguir os três sem
+  -- precisar de uma segunda chave, e 'estado' — só o item do FARUS traz
+  -- um valor real aqui (tipicamente 'nao_verificado'); a Cláusula de
+  -- Caráter Travado exige que a redação final NUNCA apresente um item
+  -- 'nao_verificado' como fato confirmado.
   with f as (
     select 'fonte_declarada'::text as tipo, nome, url, nivel, esfera, selo,
-           null::text as titulo, null::text as link, null::timestamptz as publicado_em
+           null::text as titulo, null::text as link, null::timestamptz as publicado_em,
+           null::text as estado
     from fontes
     where tenant_id = p_tenant_id and mundo = p_mundo and ativa
     order by prioridade asc, nome asc
@@ -165,19 +174,47 @@ begin
   m as (
     select 'noticia'::text as tipo, fonte_nome as nome, link as url,
            null::evora_nivel_fonte as nivel, null::text as esfera, null::evora_selo_cvi as selo,
-           titulo, link, publicado_em
+           titulo, link, publicado_em,
+           null::text as estado
     from mencoes_imprensa
     where tenant_id = p_tenant_id and mundo = p_mundo and ativo
     order by publicado_em desc nulls last
     limit 20
+  ),
+  fa as (
+    select 'farus'::text as tipo, null::text as nome, url, url as link,
+           null::evora_nivel_fonte as nivel, null::text as esfera, null::evora_selo_cvi as selo,
+           titulo, publicado_em::timestamptz as publicado_em,
+           estado::text as estado
+    from farus_itens
+    where territorio_id in (
+      select territorio_id from farus_tenant_territorios where tenant_id = p_tenant_id
+    )
+    and (tenant_origem is null or tenant_origem = p_tenant_id)
+    order by capturado_em desc
+    limit 20
   )
   select coalesce(jsonb_agg(to_jsonb(x)), '[]'::jsonb) into v_fontes
-  from (select * from f union all select * from m) x;
+  from (
+    select tipo, nome, url, nivel, esfera, selo, titulo, link, publicado_em, estado from f
+    union all
+    select tipo, nome, url, nivel, esfera, selo, titulo, link, publicado_em, estado from m
+    union all
+    select tipo, nome, url, nivel, esfera, selo, titulo, link, publicado_em, estado from fa
+  ) x;
 
   select exists (
     select 1 from mencoes_imprensa
     where tenant_id = p_tenant_id and mundo = p_mundo and ativo
   ) into v_tem_mencoes;
+
+  select exists (
+    select 1 from farus_itens
+    where territorio_id in (
+      select territorio_id from farus_tenant_territorios where tenant_id = p_tenant_id
+    )
+    and (tenant_origem is null or tenant_origem = p_tenant_id)
+  ) into v_tem_farus;
 
   -- ---- Bloco 7: Movimento sugerido (72h) (Bia — freio humano) ---------
   -- Candidatos reais a virarem sugestão de movimento: desdobramentos
@@ -244,10 +281,10 @@ begin
       'dono_agente', 'AIM-g',
       'status', case
         when jsonb_array_length(v_fontes) = 0 then 'sem_dado_hoje'
-        when v_tem_mencoes then 'preenchido'
+        when v_tem_mencoes or v_tem_farus then 'preenchido'
         else 'parcial_fontes_declaradas'
       end,
-      'aviso', 'Fontes declaradas (tabela fontes) e manchetes reais do coletor de imprensa (tabela mencoes_imprensa, Fase 6), quando houver — cada item marcado com "tipo".',
+      'aviso', 'Fontes declaradas (tabela fontes), manchetes reais do coletor de imprensa por nome (mencoes_imprensa, Fase 6) e acervo do FARUS por território (farus_itens, Fase 10+) — cada item marcado com "tipo". Itens do FARUS trazem "estado": quando "nao_verificado", a redação final NÃO deve apresentar como fato confirmado.',
       'itens', v_fontes
     ),
     jsonb_build_object(

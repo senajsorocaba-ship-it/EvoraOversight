@@ -1,11 +1,12 @@
 name: Briefing diário
 
-# Agendador do motor de execução do briefing (ao-SUPABASE-BLOCO1/evora_motor_execucao.py)
-# e do coletor de menções por nome (ao-SUPABASE-BLOCO1/evora_coletor_mencoes.py, roda
-# primeiro para o bloco 6 já chegar com menções frescas quando a Bia redige).
-# Ambos com --todos: processa todo tenant com ativo=true, mundo=gabinete (o único
-# mundo com dado real hoje). Falha de um tenant não impede os demais — ver
-# processar_tenant/--todos em cada script.
+# Agendador do motor de execução do briefing (ao-SUPABASE-BLOCO1/evora_motor_execucao.py),
+# do coletor de menções por nome (ao-SUPABASE-BLOCO1/evora_coletor_mencoes.py) e do
+# coletor de ingestão do FARUS (ao-SUPABASE-BLOCO1/evora_coletor_farus.py) — os dois
+# coletores rodam primeiro, para o bloco 6 já chegar com dado fresco quando a Bia redige.
+# Todos com --todos: processa todo tenant com ativo=true, mundo=gabinete (o único
+# mundo com dado real hoje; o FARUS não tem conceito de mundo, é por território).
+# Falha de um tenant não impede os demais — ver processar_tenant/--todos em cada script.
 #
 # Requer 3 secrets do repositório (Settings > Secrets and variables > Actions),
 # as mesmas chaves já usadas em ao-SUPABASE-BLOCO1/.env localmente:
@@ -29,6 +30,11 @@ jobs:
       - run: pip install -r ao-SUPABASE-BLOCO1/requirements.txt
 
       - run: python ao-SUPABASE-BLOCO1/evora_coletor_mencoes.py --todos --mundo gabinete
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - run: python ao-SUPABASE-BLOCO1/evora_coletor_farus.py --todos
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
