@@ -63,7 +63,7 @@ export function Topbar({
       <div className="tb-right">
         <button
           type="button"
-          className={"pill bia" + (bia.ouvindo ? " ativo" : "")}
+          className={"pill bia" + (bia.processando ? " pensando" : bia.ouvindo ? " ativo" : "")}
           onClick={alternarBia}
           title={bia.suportado ? "Clique pra ligar/desligar a escuta da Bia" : "Não suportado neste navegador"}
           suppressHydrationWarning

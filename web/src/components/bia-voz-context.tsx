@@ -33,7 +33,9 @@ const TEMPO_ESPERA_COMANDO_MS = 6000;
 // interrupted"). Por isso todo resultado final entra num buffer e só é
 // despachado depois de um período de silêncio sem novo resultado — trata a
 // frase inteira como um comando só, mesmo com pausas naturais no meio.
-const TEMPO_SILENCIO_FINALIZACAO_MS = 1200;
+// 900ms (reduzido de 1200ms) — mais responsivo, ainda folgado o bastante
+// pra cobrir a pausa curta típica no meio de uma frase falada.
+const TEMPO_SILENCIO_FINALIZACAO_MS = 900;
 
 // Verbos de navegação genéricos que o Manual cita (linha 519), além dos
 // rótulos de NAV_ITEMS (Demandas, Fiscalizações, Briefing, etc.).
@@ -87,6 +89,9 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
   const vozRef = useRef<SpeechSynthesisVoice | null>(null);
   const bufferComandoRef = useRef<string | null>(null);
   const timeoutFinalizacaoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Pergunta em streaming em andamento — uma pergunta nova aborta a
+  // anterior (ver despachar()), nunca duas respostas correndo juntas.
+  const streamControllerRef = useRef<AbortController | null>(null);
 
   // Escolhe uma voz feminina em pt-BR explicitamente — sem isso o navegador
   // usa QUALQUER voz padrão dele (às vezes nem em português), o que soava
@@ -147,18 +152,37 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
     return () => window.speechSynthesis.removeEventListener("voiceschanged", atualizar);
   }, [escolherVoz]);
 
+  // Fila de fala — necessária pro streaming (5): a resposta da Claude
+  // chega em pedaços, cada frase pronta precisa tocar DEPOIS da anterior
+  // terminar, nunca cortando ela. `falarDeVerdade` toca UMA frase e avisa
+  // quando termina (aoTerminar); `tocarProximaDaFila` é quem decide o que
+  // vem a seguir. Comandos que devem CORTAR o que está tocando (nova
+  // navegação, "Pode falar.") continuam usando `falar()`, que esvazia a
+  // fila e fala por cima — igual ao comportamento de antes.
+  const filaFalaRef = useRef<string[]>([]);
+  const falandoAgoraRef = useRef(false);
+
   // Bug conhecido do Chrome: chamar speak() na mesma tarefa de um cancel()
   // (ou logo após o reconhecimento de voz devolver um resultado) às vezes
   // faz a fala ser descartada em silêncio — sem onerror, sem onstart, nada.
-  // Duas defesas: (1) um pequeno atraso entre cancel() e speak(), (2) um
-  // vigia que confere se onstart disparou; se não disparou a tempo, tenta
-  // de novo uma vez com uma nova instância de utterance (reusar a mesma
-  // depois de falhar não funciona de forma confiável nesse bug).
-  // Função nomeada (não a const de fora) pra recursão seguro dentro do
+  // Duas defesas: (1) um pequeno atraso entre cancel() e speak() (só no
+  // caminho que interrompe, ver falar() abaixo — tocar o próximo item da
+  // fila não passa por cancel(), não precisa do atraso), (2) um vigia que
+  // confere se onstart disparou; se não disparou a tempo, tenta de novo
+  // uma vez com uma nova instância de utterance (reusar a mesma depois de
+  // falhar não funciona de forma confiável nesse bug).
+  // Função nomeada (não a const de fora) pra recursão segura dentro do
   // useCallback — evita tanto "usado antes de declarado" quanto o problema
   // de reatribuir um ref durante a renderização.
-  const falarDeVerdade = useCallback(function tentar(texto: string, tentativa: number) {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
+  const falarDeVerdade = useCallback(function tentar(
+    texto: string,
+    tentativa: number,
+    aoTerminar?: () => void
+  ) {
+    if (typeof window === "undefined" || !window.speechSynthesis) {
+      aoTerminar?.();
+      return;
+    }
     const utter = new SpeechSynthesisUtterance(texto);
     utter.lang = "pt-BR";
     // Ritmo levemente mais devagar que o padrão (1.0) soa mais calmo e
@@ -175,19 +199,23 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
       comecou = true;
       console.log("[Bia] começou a falar. (tentativa", tentativa, ")");
     };
-    utter.onend = () => console.log("[Bia] terminou de falar.");
+    utter.onend = () => {
+      console.log("[Bia] terminou de falar.");
+      aoTerminar?.();
+    };
     utter.onerror = (ev) => {
       console.error("[Bia] erro no speechSynthesis:", ev.error, "(tentativa", tentativa, ")");
       // "interrupted"/"canceled" é o cancel() de uma fala MAIS NOVA cortando
       // esta — comportamento esperado (a resposta mais recente tem
-      // prioridade), não uma falha de verdade. Sem isso, cada resposta nova
-      // fazia a anterior "falhar" e tentar de novo, competindo consigo
-      // mesma e às vezes gerando um aviso de erro falso na tela.
+      // prioridade), não uma falha de verdade. Quem cancelou já decide o
+      // que toca a seguir — não chama aoTerminar aqui, senão a fila velha
+      // e a nova avançam juntas.
       if (ev.error === "interrupted" || ev.error === "canceled") return;
       if (tentativa === 1) {
-        setTimeout(() => tentar(texto, 2), 150);
+        setTimeout(() => tentar(texto, 2, aoTerminar), 150);
       } else {
         setErro("Não consegui falar a resposta em voz alta agora.");
+        aoTerminar?.();
       }
     };
     window.speechSynthesis.speak(utter);
@@ -196,13 +224,36 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
       if (!comecou && tentativa === 1) {
         console.warn("[Bia] speak() não iniciou em 1.2s — provável bug de silêncio do Chrome, tentando de novo.");
         window.speechSynthesis.cancel();
-        tentar(texto, 2);
+        tentar(texto, 2, aoTerminar);
       } else if (!comecou && tentativa === 2) {
         console.error("[Bia] speak() falhou nas duas tentativas — desistindo, mas avisando na tela.");
         setErro("Não consegui falar a resposta em voz alta agora (o navegador não respondeu).");
+        aoTerminar?.();
       }
     }, 1200);
   }, []);
+
+  const tocarProximaDaFila = useCallback(() => {
+    if (falandoAgoraRef.current) return;
+    const proxima = filaFalaRef.current.shift();
+    if (proxima === undefined) return;
+    falandoAgoraRef.current = true;
+    falarDeVerdade(proxima, 1, () => {
+      falandoAgoraRef.current = false;
+      tocarProximaDaFila();
+    });
+  }, [falarDeVerdade]);
+
+  // Bota uma frase no fim da fila — se nada estiver tocando, começa na
+  // hora; se já tem algo tocando, espera a vez, sem cortar.
+  const enfileirarFala = useCallback(
+    (texto: string) => {
+      if (!texto.trim()) return;
+      filaFalaRef.current.push(texto);
+      tocarProximaDaFila();
+    },
+    [tocarProximaDaFila]
+  );
 
   const falar = useCallback(
     (texto: string) => {
@@ -211,15 +262,17 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
         console.warn("[Bia] falar() abortado — speechSynthesis indisponível ou texto vazio.");
         return;
       }
-      // Cancela qualquer fala pendente antes de começar — evita fila presa
-      // que parecia "não responder nada" quando na verdade só estava atrás
-      // de outra fala na fila. O atraso depois do cancel() é a defesa (1)
-      // acima — dar a chance do motor de síntese realmente esvaziar a fila
-      // antes de mandar a próxima fala.
+      // Esvazia a fila e cancela o que estiver tocando — isto é uma
+      // INTERRUPÇÃO (nova navegação, "Pode falar.", etc.), a resposta mais
+      // recente sempre tem prioridade. O atraso depois do cancel() é a
+      // defesa (1) do comentário acima — dar a chance do motor de síntese
+      // realmente esvaziar a fila antes de mandar a próxima fala.
+      filaFalaRef.current = [];
+      falandoAgoraRef.current = false;
       window.speechSynthesis.cancel();
-      setTimeout(() => falarDeVerdade(texto, 1), 50);
+      setTimeout(() => enfileirarFala(texto), 50);
     },
-    [falarDeVerdade]
+    [enfileirarFala]
   );
 
   // Toda resposta da Bia passa por aqui — SEMPRE mostra o texto na tela E
@@ -266,7 +319,26 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Não é navegação — vira pergunta pra Bia responder com dado real.
+      // Não é navegação — vira pergunta pra Bia responder com dado real,
+      // EM STREAMING: a Claude leva uns 2,5-3,5s pra responder inteiro
+      // (medido) — em vez de esperar tudo, fala cada frase assim que ela
+      // sai, então a primeira palavra sai em menos de 1s. Uma pergunta
+      // nova sempre supera a anterior (aborta o fetch em andamento, se
+      // houver, e esvazia a fila de fala) — nunca duas respostas se
+      // misturando.
+      streamControllerRef.current?.abort();
+      const controller = new AbortController();
+      streamControllerRef.current = controller;
+      filaFalaRef.current = [];
+      falandoAgoraRef.current = false;
+      window.speechSynthesis?.cancel();
+      // "Deixa eu ver..." entra na MESMA fila da resposta de verdade — toca
+      // primeiro, sem cortar nem ser cortado pelas frases que vêm a
+      // seguir (falar() cancelaria; aqui é só enfileirar). Não passa por
+      // responder() de propósito: é um "ouvi você", não a resposta em si,
+      // não deve sujar o texto mostrado na tela.
+      enfileirarFala("Deixa eu ver...");
+
       // Manda junto o texto visível da própria página atual — é o que
       // faz "Bia, detalha isso"/"fale o que tem aqui" funcionar em
       // qualquer tela, sem precisar adivinhar de antemão toda variação de
@@ -276,7 +348,7 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
       const paginaTexto = areaConteudo?.innerText?.trim().slice(0, 6000) || null;
       const paginaTitulo = document.title || null;
       console.log(
-        "[Bia] não bateu como navegação, indo pra /api/bia com:",
+        "[Bia] não bateu como navegação, indo pra /api/bia (streaming) com:",
         comando,
         "| texto da página capturado:",
         paginaTexto ? `${paginaTexto.length} caracteres` : "(nenhum)"
@@ -289,25 +361,65 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pergunta: comando, paginaTitulo, paginaTexto }),
+          signal: controller.signal,
         });
         console.log("[Bia] /api/bia respondeu, status:", r.status);
-        const dados = await r.json().catch((e) => {
-          console.error("[Bia] resposta de /api/bia não é JSON válido:", e);
-          return null;
-        });
-        console.log("[Bia] corpo da resposta:", dados);
-        const resposta =
-          dados?.resposta ||
-          "Não consegui responder agora — o serviço da Bia está indisponível.";
-        responder(resposta);
+        if (!r.ok || !r.body) {
+          const resposta = "Não consegui responder agora — o serviço da Bia está indisponível.";
+          setRespostaFalada(resposta);
+          enfileirarFala(resposta);
+          return;
+        }
+
+        // Lê o corpo por pedaço, acumula, e assim que um trecho termina
+        // numa frase completa (., !, ?) já manda pra fila de fala — não
+        // espera o `done` do reader. O restante que ainda não fechou frase
+        // fica no buffer até o próximo pedaço (ou até acabar o stream).
+        const reader = r.body.getReader();
+        const decoder = new TextDecoder();
+        let bufferFrase = "";
+        let respostaCompleta = "";
+        let recebeuAlgo = false;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (!recebeuAlgo) {
+            recebeuAlgo = true;
+            setProcessando(false); // já tem dado de verdade chegando, não é mais só "pensando"
+          }
+          const pedaco = decoder.decode(value, { stream: true });
+          bufferFrase += pedaco;
+          respostaCompleta += pedaco;
+          setRespostaFalada(respostaCompleta); // efeito "digitando" na tela, acompanha a fala
+
+          const partes = bufferFrase.split(/(?<=[.!?])\s+/);
+          if (partes.length > 1) {
+            bufferFrase = partes.pop() ?? "";
+            for (const frase of partes) enfileirarFala(frase.trim());
+          }
+        }
+        if (bufferFrase.trim()) enfileirarFala(bufferFrase.trim());
+
+        if (!recebeuAlgo) {
+          const resposta = "Não consegui formular uma resposta agora.";
+          setRespostaFalada(resposta);
+          enfileirarFala(resposta);
+        }
       } catch (e) {
-        console.error("[Bia] fetch pra /api/bia falhou:", e);
-        responder("Não consegui falar com o servidor agora. Tente de novo em instantes.");
+        if (e instanceof DOMException && e.name === "AbortError") {
+          console.log("[Bia] pergunta anterior abortada — uma pergunta mais nova assumiu.");
+          return;
+        }
+        console.error("[Bia] fetch/stream pra /api/bia falhou:", e);
+        const resposta = "Não consegui falar com o servidor agora. Tente de novo em instantes.";
+        setRespostaFalada(resposta);
+        enfileirarFala(resposta);
       } finally {
         setProcessando(false);
       }
     },
-    [router, responder]
+    [router, responder, enfileirarFala]
   );
 
   const cancelarEspera = useCallback(() => {
@@ -432,6 +544,10 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
     recognition.onstart = () => {
       console.log("[Bia] reconhecimento iniciado — ouvindo.");
       setOuvindo(true);
+      // Se a tela ainda mostrava "perdi a conexão" de uma queda anterior,
+      // reconectar com sucesso é a hora de tirar o aviso — sem mexer em
+      // nenhum outro erro que porventura esteja ativo por outro motivo.
+      setErro((atual) => (atual?.startsWith("Perdi a conexão") ? null : atual));
     };
     recognition.onerror = (ev: SpeechRecognitionErrorEvent) => {
       console.error("[Bia] erro no reconhecimento:", ev.error);
@@ -440,9 +556,16 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
         ligadaRef.current = false;
         setLigada(false);
         setOuvindo(false);
+      } else if (ev.error === "network") {
+        // Falha real e visível (achada testando) — sem avisar, uma frase
+        // dita bem nesse instante se perde em silêncio e parece que "deu
+        // erro" sem explicação. onend ainda reinicia sozinho em 300ms;
+        // isto só torna essa reconexão visível em vez de muda.
+        setErro("Perdi a conexão do reconhecimento de voz — reconectando…");
       }
-      // outros erros (ex.: "no-speech", "network") são tratados no onend,
-      // que reinicia sozinho enquanto ligada — degradação avisada, não silenciosa.
+      // "no-speech" (o mais comum, só significa "ninguém falou por um
+      // tempo") continua silencioso de propósito — não é uma falha,
+      // avisar toda vez seria alarme falso constante.
     };
     recognition.onend = () => {
       console.log("[Bia] reconhecimento parou. ligada?", ligadaRef.current);
@@ -476,6 +599,10 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeoutFinalizacaoRef.current);
       timeoutFinalizacaoRef.current = null;
     }
+    streamControllerRef.current?.abort();
+    filaFalaRef.current = [];
+    falandoAgoraRef.current = false;
+    if (typeof window !== "undefined") window.speechSynthesis?.cancel();
     recognitionRef.current?.stop();
     recognitionRef.current = null;
   }, [cancelarEspera]);
@@ -485,6 +612,7 @@ export function BiaVozProvider({ children }: { children: ReactNode }) {
       ligadaRef.current = false;
       if (timeoutComandoRef.current) clearTimeout(timeoutComandoRef.current);
       if (timeoutFinalizacaoRef.current) clearTimeout(timeoutFinalizacaoRef.current);
+      streamControllerRef.current?.abort();
       recognitionRef.current?.stop();
     };
   }, []);
