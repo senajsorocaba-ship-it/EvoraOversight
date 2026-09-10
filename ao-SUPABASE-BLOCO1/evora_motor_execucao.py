@@ -218,7 +218,12 @@ REGRAS INVIOLÁVEIS (Cláusula de Caráter Travado):
 - Quando um bloco vier com status "pendente_integracao_externa" ou
   "sem_dado_hoje", diga explicitamente que não há registro hoje para aquele
   bloco — nunca preencha com suposição, estimativa ou exemplo genérico.
-- Cada item relevante deve citar a fonte/origem quando o dado trouxer uma.
+- Cada item relevante deve citar a fonte/origem quando o dado trouxer uma. Se
+  o item tiver um link (campo "link" ou "url" nos dados), inclua-o SEMPRE
+  como link em markdown — `[nome da fonte](link)`, ex.: `[G1](https://...)`.
+  Nunca cite uma fonte com link disponível sem incluir o link: é o que
+  permite conferir a informação na origem (CVI — cada afirmação vem com
+  veículo, data e link, nunca só a palavra da Bia).
 - Tom factual, conciso, respeitoso. Sem opinião pessoal, sem recomendação de voto.
 - O bloco de Fiscalização é sempre "indício para acompanhar, NUNCA acusação".
 - O bloco "Movimento sugerido" traz sugestões que dependem de APROVAÇÃO HUMANA
@@ -315,6 +320,7 @@ h2{font-family:Georgia,serif;font-size:16px;color:var(--navy);margin:0 0 8px;pad
 ul{margin:4px 0 0 18px}li{font-size:14px;margin:5px 0}
 p{font-size:14px;margin:6px 0}
 strong{color:var(--navy)}
+a{color:var(--navy);text-decoration:underline;text-decoration-color:var(--gold)}
 .foot{margin:18px 14px 0;font-size:11px;color:var(--mut);text-align:center;line-height:1.6}
 """
 
@@ -331,7 +337,19 @@ def _md_para_html(md):
 
         def bold(s):
             s = html.escape(s)
-            return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
+            s = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
+            # Link em markdown, [texto](url) — o CVI exige veículo+data+link
+            # em cada afirmação (ver montar_prompt_sistema); sem isto, o link
+            # que a Bia escreve fica preso entre colchetes, texto morto, não
+            # clicável. Roda DEPOIS do html.escape() de propósito: um "&" que
+            # apareça na URL (comum em query string) já sai como "&amp;",
+            # forma correta dentro de um atributo href.
+            s = re.sub(
+                r"\[([^\]]+)\]\((https?://[^\s)]+)\)",
+                r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>',
+                s,
+            )
+            return s
 
         if line.startswith("# "):
             if in_ul:
