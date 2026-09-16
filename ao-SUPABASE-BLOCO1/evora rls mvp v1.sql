@@ -569,6 +569,64 @@ grant execute on function aegis_mascara(uuid, aegis_especie) to authenticated;
 revoke execute on function aegis_ler(uuid, aegis_especie, aegis_motivo_leitura, text) from anon;
 revoke execute on function aegis_mascara(uuid, aegis_especie) from anon;
 
+-- ---------------------------------------------------------------------
+-- 18. TRAVESSIA DE MUNDO (Ponte Bia↔Nil) — a única travessia sancionada
+-- entre gabinete e campanha (Princípio Inviolável nº 4, "separação de
+-- mundos") acontece na aplicação e fica registrada aqui, na trilha
+-- imutável (seção 11 acima). Esta função NÃO altera o token — a policy
+-- de cada tabela continua conferindo tenant_id/mundo do próprio JWT; ela
+-- só autoriza e REGISTRA a travessia. A aplicação usa o valor de volta
+-- pra decidir de qual mundo pedir dado na sessão. Só quem legitimamente
+-- enxerga os dois mundos (evora_ve_os_dois_mundos, definida acima nesta
+-- mesma seção de contexto) pode atravessar — mesmo idioma de
+-- evora_valida_ciencia_briefing (seção 15): plpgsql comum, sem security
+-- definer, porque tudo que a função faz (ler usuarios, inserir em
+-- auditoria) o próprio chamador authenticated já pode fazer direto —
+-- ela só acrescenta a validação e o registro em uma chamada só.
+-- ---------------------------------------------------------------------
+create or replace function evora_registrar_travessia(p_mundo evora_mundo)
+returns evora_mundo language plpgsql as $$
+declare
+  v_tenant     uuid := evora_tenant_atual();
+  v_usuario_id uuid;
+  v_papel      text;
+begin
+  if v_tenant is null then
+    raise exception 'Sem identidade no token. Refaça o login.';
+  end if;
+
+  select u.id, u.papel::text into v_usuario_id, v_papel
+  from usuarios u
+  where u.auth_user_id = nullif(evora_claims() ->> 'sub', '')::uuid
+    and u.ativo;
+
+  if v_usuario_id is null then
+    raise exception 'Usuário sem cadastro ativo.';
+  end if;
+
+  -- Apenas quem legitimamente vê os dois mundos pode atravessar.
+  if not evora_ve_os_dois_mundos() then
+    raise exception 'Seu papel (%) não tem acesso aos dois mundos.', coalesce(v_papel, 'indefinido');
+  end if;
+
+  insert into auditoria (tenant_id, mundo, ator_id, acao, detalhe)
+  values (
+    v_tenant,
+    p_mundo,
+    v_usuario_id,
+    'travessia_ponte',
+    jsonb_build_object('para', p_mundo, 'papel', v_papel)
+  );
+
+  return p_mundo;
+end $$;
+
+comment on function evora_registrar_travessia(evora_mundo) is
+  'Registra na trilha imutável a travessia entre gabinete e campanha (Ponte Bia↔Nil). Recusa quem não tem os dois mundos. Não altera o token — a aplicação usa o retorno para pedir dado do mundo escolhido na sessão.';
+
+revoke execute on function evora_registrar_travessia(evora_mundo) from anon;
+grant execute on function evora_registrar_travessia(evora_mundo) to authenticated;
+
 -- =====================================================================
 -- TESTE DE ACEITE — a prova que vira argumento de venda
 -- =====================================================================
