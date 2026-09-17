@@ -33,6 +33,7 @@ nem deploy do front, nem agendador ativo. Tudo abaixo foi validado contra um
 | **Bia por voz** | ✅ local — ativação por palavra-chave ("Bia…"), navegação, perguntas respondidas com dado do próprio tenant, resposta em streaming, fila de fala. Sem invenção (Cláusula de Caráter Travado) |
 | **Painel web** | ⚠️ 16 telas com layout pronto, mas **só `/briefing` está ligada a dado real** — o resto é maquete estática (portada do PDF de demonstração) |
 | **Reconhecimento facial** (modo descanso) | 🟡 STAND-BY — implementado, **não testado** |
+| **Manual Supremo v11.0** (16/09/2026) | 🟡 Parcial — hook renomeado (`evora_token_hook`), módulo Demandas travado no banco até parecer jurídico, 2 coletores "confirmado" novos (PNCP + Agenda Legislativa, ambos aguardando uma `farus_fontes` liberada por humano pra rodar de verdade). **Veritas** (acervo legal) ainda não construído — o Caderno só especifica 2 assinaturas de função, sem DDL de tabela |
 
 ### Briefing — blocos com dado real
 
