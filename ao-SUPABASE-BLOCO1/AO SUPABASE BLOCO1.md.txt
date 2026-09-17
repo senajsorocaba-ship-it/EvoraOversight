@@ -675,6 +675,16 @@ comment on table municipio_vereadores_pendencias is 'Fase 9 — fila de revisão
 alter table tenants add column if not exists plano evora_plano not null default 'municipal';
 comment on column tenants.plano is 'Fase 10 — nível contratado (Manual E12). Define o alcance territorial do radar. Todo nível contém o inferior.';
 
+-- "Caderno do Programador" (acompanha o Manual Supremo v11.0, 16/09/2026):
+-- o módulo Demandas fica desligado até haver parecer jurídico — hoje trata
+-- dado pessoal de cidadão (nome, contato, geolocalização) sem esse parecer
+-- concluído. Default false pra todo tenant, inclusive os que já existem;
+-- a trava de verdade fica no trigger da seção "TRAVA DO MÓDULO DEMANDAS"
+-- em evora_rls_mvp_v1.sql (BLOCO 2), não só aqui — esta coluna sozinha
+-- não impede escrita nenhuma, só guarda a decisão.
+alter table tenants add column if not exists demandas_parecer_juridico boolean not null default false;
+comment on column tenants.demandas_parecer_juridico is 'Caderno do Programador v11.0: módulo Demandas fica travado (nenhum insert/update em demandas) até isto virar true — decisão humana registrada, nunca automática.';
+
 -- ---------------------------------------------------------------------
 -- 19. FARUS_TERRITORIOS — municípios sob monitoramento do FARUS. Cada um é
 -- coletado UMA VEZ e serve todos os tenants daquela cidade (mesma economia

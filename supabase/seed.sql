@@ -22,7 +22,8 @@
 -- ---------------------------------------------------------------------
 insert into tenants (
   id, slug, nome_autoridade, cargo, partido, municipio_sede, uf,
-  perfil, ciencia_travas, ciencia_data, operacional
+  perfil, ciencia_travas, ciencia_data, operacional,
+  demandas_parecer_juridico
 ) values (
   'a0000000-0000-0000-0000-00000000000a',
   'tatiane-costa-sorocaba',
@@ -38,6 +39,12 @@ insert into tenants (
   ),
   true,
   now(),
+  true,
+  -- true só aqui: tenant fictício de teste (ver cabeçalho deste arquivo,
+  -- "SEM nenhum dado pessoal de cidadão"), liberado explicitamente pra
+  -- não travar o próprio seed no trigger trg_demandas_trava_juridica
+  -- (evora_rls_mvp_v1.sql). Todo tenant real nasce com default false —
+  -- este script nunca roda fora do ambiente local (ver cabeçalho).
   true
 );
 

@@ -627,6 +627,49 @@ comment on function evora_registrar_travessia(evora_mundo) is
 revoke execute on function evora_registrar_travessia(evora_mundo) from anon;
 grant execute on function evora_registrar_travessia(evora_mundo) to authenticated;
 
+-- ---------------------------------------------------------------------
+-- 19. TRAVA DO MÓDULO DEMANDAS — "Caderno do Programador" (Manual Supremo
+-- v11.0, 16/09/2026): o módulo fica desligado até haver parecer jurídico,
+-- porque trata dado pessoal de cidadão (nome, contato, geolocalização)
+-- sem esse parecer concluído. `tenants.demandas_parecer_juridico`
+-- (schema, BLOCO 1) guarda a decisão; esta trigger é o que a torna real —
+-- um trigger, não só a policy `demandas_isolamento` acima, porque
+-- precisa ler OUTRA tabela (tenants) além da linha sendo escrita, e
+-- porque uma mensagem de erro explícita ("aguarda parecer jurídico") é
+-- mais honesta que um "new row violates row-level security policy"
+-- genérico de uma RLS negada.
+--
+-- Roda em INSERT e em UPDATE — enquanto a chave estiver `false`, nada
+-- muda nessa tabela pro tenant, nem um `status` de demanda já existente.
+-- Não trava SELECT: dado fictício de teste que já exista continua
+-- legível (é o que a Bia já consulta hoje), só a ESCRITA fica presa.
+-- `service_role` (o motor do briefing, por exemplo) passa direto — só
+-- `authenticated` escreve nesta tabela hoje de qualquer forma.
+-- ---------------------------------------------------------------------
+create or replace function evora_travar_demandas_sem_parecer()
+returns trigger language plpgsql as $$
+declare
+  v_liberado boolean;
+begin
+  select t.demandas_parecer_juridico into v_liberado
+  from tenants t
+  where t.id = new.tenant_id;
+
+  if not coalesce(v_liberado, false) then
+    raise exception 'Módulo Demandas aguarda parecer jurídico (Caderno do Programador v11.0) — habilite tenants.demandas_parecer_juridico para liberar a escrita neste gabinete.';
+  end if;
+
+  return new;
+end $$;
+
+comment on function evora_travar_demandas_sem_parecer is
+  'Bloqueia insert/update em demandas enquanto tenants.demandas_parecer_juridico for false. Módulo desligado até parecer jurídico (Caderno do Programador v11.0).';
+
+drop trigger if exists trg_demandas_trava_juridica on demandas;
+create trigger trg_demandas_trava_juridica
+  before insert or update on demandas
+  for each row execute function evora_travar_demandas_sem_parecer();
+
 -- =====================================================================
 -- TESTE DE ACEITE — a prova que vira argumento de venda
 -- =====================================================================
