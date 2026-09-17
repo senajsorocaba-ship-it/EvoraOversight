@@ -96,7 +96,7 @@ supabase start                 # sobe Postgres + Auth + PostgREST via Docker
 supabase db reset              # aplica todas as migrations + seed
 ```
 Depois, no dashboard local (`http://127.0.0.1:54323`): Authentication → Hooks →
-habilitar **Custom Access Token** → `custom_access_token_hook`.
+habilitar **Custom Access Token** → `evora_token_hook`.
 
 **Front:**
 ```bash
@@ -125,7 +125,7 @@ python evora_motor_execucao.py  --tenant-id <uuid> --mundo gabinete
 1. **Commit + push** de todo o trabalho pendente (feito).
 2. **`supabase db push`** — aplicar as 11 migrations no projeto Supabase da nuvem.
 3. **Dashboard do Supabase (nuvem)**, passos que nenhum SQL faz:
-   - Auth → Hooks → habilitar Custom Access Token → `custom_access_token_hook`
+   - Auth → Hooks → habilitar Custom Access Token → `evora_token_hook`
      (**bloqueador** — sem isso o JWT não carrega `tenant_id` e a RLS zera tudo)
    - Auth → URL Configuration → `site_url` e redirect URLs = domínio real
    - Decidir confirmação de e-mail (se ligar, configurar SMTP)

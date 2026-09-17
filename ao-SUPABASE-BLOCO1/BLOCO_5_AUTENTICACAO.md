@@ -14,12 +14,12 @@ Abra `evora auth mvp v1.sql` (nesta mesma pasta), copie o arquivo inteiro e cole
 Editor do Supabase. Não duplicamos o SQL aqui para não ter duas fontes da verdade do
 mesmo script — igual ao padrão já usado pelos BLOCOs 2/3/4.
 
-**Esperado:** duas funções criadas (`evora_vincular_auth_user`, `custom_access_token_hook`)
+**Esperado:** duas funções criadas (`evora_vincular_auth_user`, `evora_token_hook`)
 e um trigger em `auth.users`. Sem erro em vermelho.
 
 **Conferir depois de rodar:**
 ```sql
-select proname from pg_proc where proname in ('evora_vincular_auth_user','custom_access_token_hook');
+select proname from pg_proc where proname in ('evora_vincular_auth_user','evora_token_hook');
 ```
 Deve devolver as duas linhas.
 
@@ -32,7 +32,7 @@ funções de hook sozinho.
 
 1. Vá em **Authentication → Hooks** (às vezes aparece como "Auth Hooks").
 2. Em **Custom Access Token**, escolha **Postgres function** e selecione
-   `custom_access_token_hook`.
+   `evora_token_hook`.
 3. Salve. Não precisa reiniciar nada — vale a partir do próximo login/refresh de token.
 
 Se essa tela não existir na sua versão do painel: procure em

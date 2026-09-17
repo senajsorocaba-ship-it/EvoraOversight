@@ -23,7 +23,7 @@
 --      cria por ela pelo painel) com O MESMO e-mail. O trigger abaixo
 --      (evora_vincular_auth_user) casa por e-mail e preenche
 --      usuarios.auth_user_id automaticamente.
---   3. A cada login/refresh de token, o hook abaixo (custom_access_token_hook)
+--   3. A cada login/refresh de token, o hook abaixo (evora_token_hook)
 --      lê usuarios por auth_user_id e injeta tenant_id/mundo no JWT.
 --
 -- LIMITAÇÃO CONHECIDA (documentada, não resolvida aqui de propósito): um
@@ -52,7 +52,7 @@
 -- PASSO MANUAL FORA DO SQL EDITOR (obrigatório — ver BLOCO_5_AUTENTICACAO.md):
 -- depois de rodar este arquivo, ainda é preciso ir em Authentication > Hooks
 -- no painel do Supabase e ativar o hook "Custom Access Token (Postgres)"
--- apontando para a função custom_access_token_hook criada aqui. Sem esse
+-- apontando para a função evora_token_hook criada aqui. Sem esse
 -- passo no painel, a função existe mas o Supabase Auth nunca a chama.
 -- =====================================================================
 
@@ -88,7 +88,7 @@ create trigger evora_on_auth_user_created
 -- ---------------------------------------------------------------------
 -- Roda a cada login e a cada refresh de token (não só no signup), então
 -- reflete ativo/tenant_id/mundo_permitido atualizados sem exigir logout.
-create or replace function custom_access_token_hook(event jsonb)
+create or replace function evora_token_hook(event jsonb)
 returns jsonb
 language plpgsql
 stable
@@ -122,12 +122,12 @@ begin
 end;
 $$;
 
-comment on function custom_access_token_hook is
+comment on function evora_token_hook is
   'Hook de Auth do Supabase (ativar em Authentication > Hooks no painel — ver BLOCO_5_AUTENTICACAO.md). Injeta tenant_id/mundo no app_metadata do JWT a partir de usuarios, a cada emissão de token.';
 
 -- Só o serviço de Auth do Supabase pode chamar o hook — nunca client-side.
-revoke execute on function custom_access_token_hook(jsonb) from public, anon, authenticated;
-grant execute on function custom_access_token_hook(jsonb) to supabase_auth_admin;
+revoke execute on function evora_token_hook(jsonb) from public, anon, authenticated;
+grant execute on function evora_token_hook(jsonb) to supabase_auth_admin;
 
 -- O trigger e o hook leem/escrevem usuarios como SECURITY DEFINER (dono do
 -- banco, que ignora até o FORCE ROW LEVEL SECURITY) de propósito: nenhum
