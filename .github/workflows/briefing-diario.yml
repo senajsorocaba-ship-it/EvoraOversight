@@ -1,9 +1,13 @@
 name: Briefing diário
 
-# Agendador do motor de execução do briefing (ao-SUPABASE-BLOCO1/evora_motor_execucao.py),
-# do coletor de menções por nome (ao-SUPABASE-BLOCO1/evora_coletor_mencoes.py) e do
-# coletor de ingestão do FARUS (ao-SUPABASE-BLOCO1/evora_coletor_farus.py) — os dois
-# coletores rodam primeiro, para o bloco 6 já chegar com dado fresco quando a Bia redige.
+# Agendador do motor de execução do briefing (ao-SUPABASE-BLOCO1/evora_motor_execucao.py)
+# e de 4 coletores que rodam antes dele, para o bloco 6 já chegar com dado fresco quando
+# a Bia redige: evora_coletor_mencoes.py (menções por nome), evora_coletor_farus.py
+# (busca geral por território, sempre nao_verificado), evora_coletor_pncp_farus.py e
+# evora_conector_agenda_legislativa.py (Manual v11.0 — dado estruturado de fonte
+# primária, estado='confirmado', mas só rodam de verdade quando um território tiver
+# uma farus_fontes 'configurada' pra especie deles — decisão D6, nunca automática; até
+# lá, os dois últimos passos pulam cada tenant e terminam sem gravar nada, de propósito).
 # Todos com --todos: processa todo tenant com ativo=true, mundo=gabinete (o único
 # mundo com dado real hoje; o FARUS não tem conceito de mundo, é por território).
 # Falha de um tenant não impede os demais — ver processar_tenant/--todos em cada script.
@@ -35,6 +39,16 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - run: python ao-SUPABASE-BLOCO1/evora_coletor_farus.py --todos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - run: python ao-SUPABASE-BLOCO1/evora_coletor_pncp_farus.py --todos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - run: python ao-SUPABASE-BLOCO1/evora_conector_agenda_legislativa.py --todos
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

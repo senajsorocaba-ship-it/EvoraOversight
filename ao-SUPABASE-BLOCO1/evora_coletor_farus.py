@@ -151,6 +151,27 @@ def calcular_hash(cfg, titulo, conteudo):
 
 
 # ---------------------------------------------------------------------
+# 3b. Fonte liberada — usada só pelos coletores que gravam estado=
+# 'confirmado' (evora_coletor_pncp_farus.py, evora_conector_agenda_
+# legislativa.py). Este arquivo (busca geral) nunca chama isto — ele
+# nunca grava 'confirmado', então nunca precisa de fonte alguma (ver
+# docstring do módulo). Decisão D6 (Anexo 16): nenhuma fonte alimenta
+# afirmação sem liberação humana registrada — por isso esta função só
+# BUSCA, nunca cria nem libera uma fonte sozinha. Sem fonte 'configurada'
+# pro território+espécie, quem chama isto decide o que fazer (normalmente:
+# recusar rodar, com uma mensagem dizendo como liberar).
+# ---------------------------------------------------------------------
+def buscar_fonte_configurada(cfg, territorio_id, especie):
+    url = (
+        f"{cfg['supabase_url']}/rest/v1/farus_fontes"
+        f"?select=id&territorio_id=eq.{territorio_id}"
+        f"&especie=eq.{especie}&estado=eq.configurada&limit=1"
+    )
+    achados = _rest_request("GET", url, cfg["supabase_key"]) or []
+    return achados[0]["id"] if achados else None
+
+
+# ---------------------------------------------------------------------
 # 4. Orquestração por tenant
 # ---------------------------------------------------------------------
 def processar_tenant(cfg, tenant, limite_por_consulta):
