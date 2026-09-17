@@ -685,6 +685,21 @@ comment on column tenants.plano is 'Fase 10 — nível contratado (Manual E12). 
 alter table tenants add column if not exists demandas_parecer_juridico boolean not null default false;
 comment on column tenants.demandas_parecer_juridico is 'Caderno do Programador v11.0: módulo Demandas fica travado (nenhum insert/update em demandas) até isto virar true — decisão humana registrada, nunca automática.';
 
+-- Freio de abuso pras RPCs anônimas de autocadastro (evora_verificar_vereador/
+-- evora_autocadastro_vereador, BLOCO 5) — sem isso, alguém pode martelar
+-- evora_verificar_vereador com e-mails em sequência pra tentar enumerar quem
+-- está no roster de municipio_vereadores. Não é a tabela auditoria (essa é
+-- imutável, trilha permanente); esta é só um contador de curto prazo, com
+-- RLS habilitado e SEM NENHUMA policy (ausência é a proteção, mesmo padrão
+-- de municipio_vereadores/aegis_cofre) — só as funções security definer que
+-- a chamam conseguem tocar nela.
+create table if not exists evora_rate_limit (
+  chave         text primary key,   -- ex.: 'vereador:' || lower(email)
+  tentativas    int not null default 1,
+  janela_inicio timestamptz not null default now()
+);
+comment on table evora_rate_limit is 'Contador de tentativas por janela de tempo, pras RPCs anônimas de autocadastro. Sem policy de acesso — só evora_checar_rate_limite (security definer) toca aqui.';
+
 -- ---------------------------------------------------------------------
 -- 19. FARUS_TERRITORIOS — municípios sob monitoramento do FARUS. Cada um é
 -- coletado UMA VEZ e serve todos os tenants daquela cidade (mesma economia

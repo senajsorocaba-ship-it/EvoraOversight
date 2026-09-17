@@ -146,6 +146,54 @@ grant execute on function evora_token_hook(jsonb) to supabase_auth_admin;
 -- sempre o que a própria função acabou de criar.
 -- =====================================================================
 
+-- Freio de abuso (Manual v11.0) — sem isto, dava pra martelar
+-- evora_verificar_vereador com e-mails em sequência tentando enumerar
+-- quem está no roster de municipio_vereadores (uma RPC anônima, sem
+-- limite nenhum antes disto). Chave é livre — quem chama decide o
+-- prefixo (ex.: 'vereador:'||email) — pra dar pra reaproveitar em
+-- futuras RPCs anônimas sem precisar de uma tabela por funcionalidade.
+create or replace function evora_checar_rate_limite(p_chave text, p_limite int, p_janela interval)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_tentativas    int;
+  v_janela_inicio timestamptz;
+begin
+  select tentativas, janela_inicio into v_tentativas, v_janela_inicio
+    from public.evora_rate_limit
+   where chave = p_chave
+     for update;
+
+  if not found then
+    insert into public.evora_rate_limit (chave) values (p_chave);
+    return;
+  end if;
+
+  if now() - v_janela_inicio > p_janela then
+    update public.evora_rate_limit
+       set tentativas = 1, janela_inicio = now()
+     where chave = p_chave;
+    return;
+  end if;
+
+  if v_tentativas >= p_limite then
+    raise exception 'Muitas tentativas em pouco tempo — aguarde um pouco antes de tentar de novo.';
+  end if;
+
+  update public.evora_rate_limit
+     set tentativas = tentativas + 1
+   where chave = p_chave;
+end;
+$$;
+
+comment on function evora_checar_rate_limite is
+  'Freio de abuso por janela de tempo — levanta exceção se p_chave já bateu p_limite tentativas dentro de p_janela. Usado por evora_verificar_vereador/evora_autocadastro_vereador contra martelamento das RPCs anônimas de autocadastro.';
+
+revoke execute on function evora_checar_rate_limite(text, int, interval) from public, anon, authenticated;
+
 -- Lista de municípios já semeados no Atlas para um estado — alimenta o
 -- <select> de cidade da tela de cadastro. Só devolve o que já existe em
 -- `municipios` (nenhuma cidade fora do Atlas aparece como opção).
@@ -167,20 +215,27 @@ comment on function evora_listar_municipios_uf is
 
 -- Checagem de elegibilidade: responde 1 e-mail por vez, nunca a lista
 -- inteira — não dá para enumerar vereadores por aqui, só confirmar (ou
--- não) um e-mail específico que o visitante já digitou.
+-- não) um e-mail específico que o visitante já digitou. Virou plpgsql
+-- (era sql/stable) só para poder chamar evora_checar_rate_limite antes
+-- de consultar — uma função com efeito colateral (grava em
+-- evora_rate_limit) não pode ficar marcada stable.
 create or replace function evora_verificar_vereador(p_municipio_id uuid, p_email text)
 returns table(elegivel boolean, nome text)
-language sql
-stable
+language plpgsql
 security definer
 set search_path = ''
 as $$
+begin
+  perform public.evora_checar_rate_limite('vereador:' || lower(p_email), 10, interval '15 minutes');
+
+  return query
   select true, v.nome
     from public.municipio_vereadores v
    where v.municipio_id = p_municipio_id
      and v.ativo
      and lower(v.email) = lower(p_email)
    limit 1;
+end;
 $$;
 
 comment on function evora_verificar_vereador is
@@ -206,6 +261,8 @@ declare
   v_slug      text;
   v_tenant_id uuid;
 begin
+  perform public.evora_checar_rate_limite('vereador:' || lower(p_email), 10, interval '15 minutes');
+
   select v.nome into v_nome
     from public.municipio_vereadores v
    where v.municipio_id = p_municipio_id

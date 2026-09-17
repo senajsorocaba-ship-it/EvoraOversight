@@ -104,6 +104,10 @@ alter table farus_fontes             enable row level security;
 alter table farus_itens              enable row level security;
 alter table aegis_cofre              enable row level security;
 alter table aegis_acessos            enable row level security;
+-- evora_rate_limit (Manual v11.0): mesmo caso de municipio_vereadores — sem
+-- grant e sem policy nenhuma, só a função security definer que a usa toca
+-- nela (ver evora_checar_rate_limite, evora_auth_mvp_v1.sql).
+alter table evora_rate_limit         enable row level security;
 
 -- Força o RLS inclusive para o dono das tabelas (defesa em profundidade)
 alter table tenants               force row level security;
@@ -147,6 +151,7 @@ alter table farus_fontes             force row level security;
 alter table farus_itens              force row level security;
 alter table aegis_cofre              force row level security;
 alter table aegis_acessos            force row level security;
+alter table evora_rate_limit         force row level security;
 
 -- ---------------------------------------------------------------------
 -- GRANTS DE TABELA — obrigatório para a Data API (PostgREST) enxergar a
