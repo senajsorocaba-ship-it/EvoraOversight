@@ -116,6 +116,21 @@ alter table evora_rate_limit         enable row level security;
 alter table veritas_normas           enable row level security;
 alter table veritas_dispositivos     enable row level security;
 alter table veritas_carga            enable row level security;
+-- Fase 13 (Manual v11.1): Inteligência Legislativa — compartilhada por
+-- território, como FARUS/Veritas (seção 21 abaixo).
+alter table legis_pessoas        enable row level security;
+alter table legis_orgaos         enable row level security;
+alter table legis_composicoes    enable row level security;
+alter table legis_materias       enable row level security;
+alter table legis_eventos        enable row level security;
+alter table legis_pareceres      enable row level security;
+alter table legis_pautas         enable row level security;
+alter table legis_pauta_materias enable row level security;
+-- Resposta/Minutas e Parecer — contexto do GABINETE, nunca compartilhado
+-- (seções 22 e 23 abaixo).
+alter table minutas           enable row level security;
+alter table minuta_eventos    enable row level security;
+alter table minuta_pareceres  enable row level security;
 
 -- Força o RLS inclusive para o dono das tabelas (defesa em profundidade)
 alter table tenants               force row level security;
@@ -163,6 +178,17 @@ alter table evora_rate_limit         force row level security;
 alter table veritas_normas           force row level security;
 alter table veritas_dispositivos     force row level security;
 alter table veritas_carga            force row level security;
+alter table legis_pessoas        force row level security;
+alter table legis_orgaos         force row level security;
+alter table legis_composicoes    force row level security;
+alter table legis_materias       force row level security;
+alter table legis_eventos        force row level security;
+alter table legis_pareceres      force row level security;
+alter table legis_pautas         force row level security;
+alter table legis_pauta_materias force row level security;
+alter table minutas           force row level security;
+alter table minuta_eventos    force row level security;
+alter table minuta_pareceres  force row level security;
 
 -- ---------------------------------------------------------------------
 -- GRANTS DE TABELA — obrigatório para a Data API (PostgREST) enxergar a
@@ -227,9 +253,24 @@ grant select on aegis_acessos to authenticated;
 -- (funções security definer, seção 20), que já filtram o que pode ser
 -- citado (situacao = 'vigente') e escondem o resto.
 
+-- Inteligência Legislativa (Fase 13): leitura para authenticated — a
+-- policy (seção 21) decide QUAIS linhas (território que o tenant
+-- acompanha, mesma malha do FARUS). Escrita é do motor (service_role) —
+-- nenhum insert/update/delete para authenticated.
+grant select on legis_pessoas, legis_orgaos, legis_composicoes, legis_materias,
+  legis_eventos, legis_pareceres, legis_pautas, legis_pauta_materias
+  to authenticated;
+
+-- Resposta/Minutas e Parecer (Fase 13): leitura para authenticated — a
+-- policy (seções 22/23) isola por tenant (nunca compartilhado, ao
+-- contrário do acervo). Escrita é só pelas funções security definer
+-- (minuta_decidir/minuta_pedir_parecer) — nenhum insert/update direto
+-- para authenticated nestas 3 tabelas.
+grant select on minutas, minuta_eventos, minuta_pareceres to authenticated;
+
 -- service_role ignora RLS por design (ver nota no topo deste arquivo) — o
 -- motor do briefing e outros jobs de servidor precisam de acesso irrestrito
--- às 16 tabelas, então aqui a concessão é total, não por operação.
+-- às tabelas, então aqui a concessão é total, não por operação.
 grant all privileges on all tables in schema public to service_role;
 
 -- ---------------------------------------------------------------------
@@ -820,6 +861,449 @@ revoke execute on function veritas_consultar(text, uuid, int) from public, anon;
 grant execute on function veritas_consultar(text, uuid, int) to authenticated;
 revoke execute on function veritas_vigente_em(uuid, date) from public, anon;
 grant execute on function veritas_vigente_em(uuid, date) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 21. INTELIGÊNCIA LEGISLATIVA (Fase 13, Manual v11.1) — compartilhada por
+-- TERRITÓRIO, como FARUS e Veritas (a pauta da Câmara de Sorocaba é a
+-- mesma para todos os vereadores da cidade — § 32 da Skill). Escrita é do
+-- motor (service_role); nenhuma policy de insert/update/delete aqui.
+-- ---------------------------------------------------------------------
+
+drop policy if exists legis_pessoas_leitura on legis_pessoas;
+create policy legis_pessoas_leitura on legis_pessoas for select to authenticated
+  using (territorio_id in (select farus_territorios_do_tenant()));
+
+drop policy if exists legis_orgaos_leitura on legis_orgaos;
+create policy legis_orgaos_leitura on legis_orgaos for select to authenticated
+  using (territorio_id in (select farus_territorios_do_tenant()));
+
+drop policy if exists legis_materias_leitura on legis_materias;
+create policy legis_materias_leitura on legis_materias for select to authenticated
+  using (territorio_id in (select farus_territorios_do_tenant()));
+
+drop policy if exists legis_pautas_leitura on legis_pautas;
+create policy legis_pautas_leitura on legis_pautas for select to authenticated
+  using (territorio_id in (select farus_territorios_do_tenant()));
+
+drop policy if exists legis_comp_leitura on legis_composicoes;
+create policy legis_comp_leitura on legis_composicoes for select to authenticated
+  using (orgao_id in (select o.id from legis_orgaos o
+          where o.territorio_id in (select farus_territorios_do_tenant())));
+
+drop policy if exists legis_eventos_leitura on legis_eventos;
+create policy legis_eventos_leitura on legis_eventos for select to authenticated
+  using (materia_id in (select m.id from legis_materias m
+          where m.territorio_id in (select farus_territorios_do_tenant())));
+
+drop policy if exists legis_pareceres_leitura on legis_pareceres;
+create policy legis_pareceres_leitura on legis_pareceres for select to authenticated
+  using (materia_id in (select m.id from legis_materias m
+          where m.territorio_id in (select farus_territorios_do_tenant())));
+
+drop policy if exists legis_pm_leitura on legis_pauta_materias;
+create policy legis_pm_leitura on legis_pauta_materias for select to authenticated
+  using (pauta_id in (select p.id from legis_pautas p
+          where p.territorio_id in (select farus_territorios_do_tenant())));
+
+-- § 6 — devolve os elementos da situação; o julgamento "está parada" é da
+-- pessoa, nunca do banco. Não é security definer: RLS de legis_materias/
+-- legis_eventos/legis_pautas já filtra tudo pelo território do chamador.
+create or replace function legis_situacao_real(p_materia uuid)
+returns table (
+  status_formal          text,
+  status_operacional     text,
+  ultimo_evento_material text,
+  ultima_data_material   date,
+  dias_sem_movimento     integer,
+  eventos_administrativos_depois integer,
+  orgao_atual            text,
+  relator                text,
+  tem_parecer            boolean,
+  proxima_pauta          date,
+  natureza_previsao      text
+)
+language sql
+stable
+as $$
+  with ultimo_material as (
+    select e.tipo::text as tipo, e.ocorrido_em
+    from legis_eventos e
+    where e.materia_id = p_materia and e.material
+    order by e.ocorrido_em desc limit 1
+  ),
+  admin_depois as (
+    select count(*)::int as n
+    from legis_eventos e, ultimo_material um
+    where e.materia_id = p_materia and not e.material
+      and e.ocorrido_em > um.ocorrido_em
+  ),
+  prox as (
+    select p.realizada_em, pm.natureza_previsao::text
+    from legis_pauta_materias pm
+    join legis_pautas p on p.id = pm.pauta_id
+    where pm.materia_id = p_materia and p.realizada_em >= current_date
+    order by p.realizada_em limit 1
+  )
+  select
+    m.status_formal::text,
+    m.status_operacional::text,
+    um.tipo,
+    um.ocorrido_em,
+    (current_date - um.ocorrido_em)::int,
+    coalesce(ad.n, 0),
+    o.nome,
+    r.nome,
+    exists (select 1 from legis_pareceres pa where pa.materia_id = p_materia),
+    prox.realizada_em,
+    coalesce(prox.natureza_previsao, 'nenhuma_previsao')
+  from legis_materias m
+  left join ultimo_material um on true
+  left join admin_depois ad on true
+  left join prox on true
+  left join legis_orgaos o on o.id = m.orgao_atual_id
+  left join legis_pessoas r on r.id = m.relator_id
+  where m.id = p_materia;
+$$;
+
+comment on function legis_situacao_real is
+'Fase 13 — § 6. Devolve os elementos da situação. O julgamento "está parada" é da pessoa, nunca do banco.';
+
+-- § 7 — "quem fazia parte quando a matéria foi analisada?", não a
+-- composição de hoje.
+create or replace function legis_composicao_em(p_orgao uuid, p_data date)
+returns table (pessoa text, partido text, papel text)
+language sql
+stable
+as $$
+  select p.nome, p.partido, c.papel
+  from legis_composicoes c
+  join legis_pessoas p on p.id = c.pessoa_id
+  where c.orgao_id = p_orgao
+    and c.inicio <= p_data
+    and (c.termino is null or c.termino >= p_data)
+  order by
+    case c.papel when 'presidente' then 1 when 'vice-presidente' then 2
+                 when 'relator' then 3 when 'titular' then 4 else 5 end,
+    p.nome;
+$$;
+
+comment on function legis_composicao_em is
+'Fase 13 — § 7. "Quem fazia parte quando a matéria foi analisada?" — não confundir com a composição atual.';
+
+-- § 4 e § 11 — localiza a matéria SEM o número: por tema, ementa,
+-- palavra-chave, número ou processo. § 44: só o verificado responde.
+create or replace function legis_buscar(
+  p_termo      text,
+  p_territorio uuid default null,
+  p_limite     integer default 10
+)
+returns table (
+  materia_id uuid, identificacao text, ementa text,
+  autor text, status_formal text, status_operacional text,
+  orgao text, dias_sem_movimento integer, fonte text
+)
+language sql
+stable
+as $$
+  select
+    m.id,
+    m.especie::text || ' ' || coalesce(m.numero,'') ||
+      coalesce('/' || m.ano::text, ''),
+    m.ementa,
+    a.nome,
+    m.status_formal::text,
+    m.status_operacional::text,
+    o.nome,
+    (select (current_date - max(e.ocorrido_em))::int
+       from legis_eventos e where e.materia_id = m.id and e.material),
+    m.fonte_url
+  from legis_materias m
+  left join legis_pessoas a on a.id = m.autor_id
+  left join legis_orgaos o on o.id = m.orgao_atual_id
+  where (p_territorio is null or m.territorio_id = p_territorio)
+    and m.verificado_por is not null
+    and (
+      to_tsvector('portuguese', m.ementa) @@ plainto_tsquery('portuguese', p_termo)
+      or m.assunto && string_to_array(lower(p_termo), ' ')
+      or m.numero = p_termo
+      or m.processo = p_termo
+    )
+  order by
+    ts_rank(to_tsvector('portuguese', m.ementa),
+            plainto_tsquery('portuguese', p_termo)) desc
+  limit p_limite;
+$$;
+
+comment on function legis_buscar is
+'Fase 13 — § 4 e § 11. Localiza a matéria sem o número: por tema, ementa, palavra-chave, número ou processo.';
+
+-- § 12 — pesquisa reversa: pessoa/órgão → matérias.
+create or replace function legis_materias_da_pessoa(p_pessoa uuid)
+returns table (identificacao text, ementa text, papel text, status text)
+language sql stable as $$
+  select m.especie::text || ' ' || coalesce(m.numero,'') || coalesce('/'||m.ano::text,''),
+         m.ementa,
+         case when m.autor_id = p_pessoa then 'autor'
+              when m.relator_id = p_pessoa then 'relator'
+              else 'coautor' end,
+         m.status_formal::text
+  from legis_materias m
+  where m.autor_id = p_pessoa or m.relator_id = p_pessoa
+     or p_pessoa = any(m.coautores)
+  order by m.apresentada_em desc nulls last;
+$$;
+
+create or replace function legis_materias_do_orgao(p_orgao uuid)
+returns table (identificacao text, ementa text, status text, quando date)
+language sql stable as $$
+  select distinct
+    m.especie::text || ' ' || coalesce(m.numero,'') || coalesce('/'||m.ano::text,''),
+    m.ementa, m.status_formal::text,
+    (select max(e.ocorrido_em) from legis_eventos e
+      where e.materia_id = m.id and e.orgao_id = p_orgao)
+  from legis_materias m
+  where m.orgao_atual_id = p_orgao
+     or exists (select 1 from legis_eventos e
+                 where e.materia_id = m.id and e.orgao_id = p_orgao)
+  order by 4 desc nulls last;
+$$;
+
+comment on function legis_materias_da_pessoa is 'Fase 13 — § 12. Pesquisa reversa: pessoa → matérias.';
+comment on function legis_materias_do_orgao is 'Fase 13 — § 12. Pesquisa reversa: comissão → matérias.';
+
+revoke execute on function legis_situacao_real(uuid) from public, anon;
+grant execute on function legis_situacao_real(uuid) to authenticated;
+revoke execute on function legis_composicao_em(uuid, date) from public, anon;
+grant execute on function legis_composicao_em(uuid, date) to authenticated;
+revoke execute on function legis_buscar(text, uuid, integer) from public, anon;
+grant execute on function legis_buscar(text, uuid, integer) to authenticated;
+revoke execute on function legis_materias_da_pessoa(uuid) from public, anon;
+grant execute on function legis_materias_da_pessoa(uuid) to authenticated;
+revoke execute on function legis_materias_do_orgao(uuid) from public, anon;
+grant execute on function legis_materias_do_orgao(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 22. RESPOSTA E MINUTAS (Fase 13, Manual v11.1) — minuta é contexto do
+-- GABINETE, nunca compartilhada (ao contrário do acervo territorial das
+-- seções 16/20/21). ÚNICA ADAPTAÇÃO REAL vs. o arquivo entregue
+-- (`13_resposta_minutas.sql`): troca `auth.uid()` por
+-- `evora_claims() ->> 'sub'`, mesmo idioma da seção 17 (Aegis) — a trava
+-- em si não muda.
+-- ---------------------------------------------------------------------
+
+-- Resolve qual registro usar para uma pessoa (padrão do tenant, salvo
+-- preferência própria).
+create or replace function evora_registro_de(p_usuario uuid)
+returns evora_registro
+language sql
+stable
+as $$
+  select coalesce(u.registro_preferido, t.registro_padrao, 'ambos'::evora_registro)
+  from usuarios u join tenants t on t.id = u.tenant_id
+  where u.id = p_usuario;
+$$;
+
+drop policy if exists minutas_isolamento on minutas;
+create policy minutas_isolamento on minutas
+  for select to authenticated
+  using (tenant_id = evora_tenant_atual()
+         and (mundo = evora_mundo_atual() or evora_mundo_atual() is null));
+
+comment on policy minutas_isolamento on minutas is
+'Minuta é contexto do gabinete — nunca entra na camada compartilhada por município.';
+
+drop policy if exists minuta_eventos_leitura on minuta_eventos;
+create policy minuta_eventos_leitura on minuta_eventos
+  for select to authenticated
+  using (tenant_id = evora_tenant_atual());
+
+-- Escrita é do motor (gera a minuta); decisão só pela função abaixo.
+-- Nenhuma policy de insert/update direto para authenticated.
+
+-- A única porta de decisão sobre uma minuta. Aprovar/descartar não é
+-- UPDATE solto — exige alçada, registra quem e quando, e motivo no
+-- descarte (travas 1/2/3 da tabela minutas).
+create or replace function minuta_decidir(
+  p_minuta  uuid,
+  p_decisao minuta_estado,
+  p_motivo  text default null
+)
+returns minutas
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_usuario uuid;
+  v_papel   text;
+  v_linha   minutas;
+begin
+  if p_decisao not in ('aprovada','descartada') then
+    raise exception 'Decisão deve ser aprovada ou descartada.';
+  end if;
+
+  select u.id, u.papel::text into v_usuario, v_papel
+  from usuarios u
+  where u.auth_user_id = nullif(evora_claims() ->> 'sub', '')::uuid
+    and u.ativo;
+
+  if v_usuario is null then
+    raise exception 'Sem identidade ativa.';
+  end if;
+
+  if v_papel not in ('autoridade','chefe_gabinete') then
+    raise exception 'Papel % não tem alçada para decidir sobre minuta.', v_papel;
+  end if;
+
+  if p_decisao = 'descartada' and (p_motivo is null or length(trim(p_motivo)) < 3) then
+    raise exception 'Descarte exige motivo registrado.';
+  end if;
+
+  update minutas
+     set estado = p_decisao,
+         decidida_por = v_usuario,
+         decidida_em = now(),
+         motivo_decisao = p_motivo
+   where id = p_minuta and tenant_id = evora_tenant_atual()
+  returning * into v_linha;
+
+  if v_linha.id is null then
+    raise exception 'Minuta não encontrada neste gabinete.';
+  end if;
+
+  return v_linha;
+end $$;
+
+comment on function minuta_decidir is
+'Fase 13 — única porta de decisão sobre minuta. Exige alçada, registra quem e quando, e motivo no descarte.';
+
+grant select on minutas, minuta_eventos to authenticated;
+revoke execute on function minuta_decidir(uuid, minuta_estado, text) from public, anon;
+grant execute on function minuta_decidir(uuid, minuta_estado, text) to authenticated;
+revoke execute on function evora_registro_de(uuid) from public, anon;
+grant execute on function evora_registro_de(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 23. PARECER COMO EVENTO (Fase 13, Manual v11.1) — solicitado caso a
+-- caso pela autoridade, nunca etapa obrigatória (decisão do fundador,
+-- 20/09/2026: habilitação é da pessoa, não papel — ver comentário da
+-- tabela minuta_pareceres em AO SUPABASE BLOCO1.md.txt). Mesma adaptação
+-- de `auth.uid()` → `evora_claims()` da seção 22.
+-- ---------------------------------------------------------------------
+
+drop policy if exists minuta_pareceres_isolamento on minuta_pareceres;
+create policy minuta_pareceres_isolamento on minuta_pareceres
+  for select to authenticated
+  using (tenant_id = evora_tenant_atual());
+
+-- A autoridade pede parecer caso a caso. Funciona igual para parecerista
+-- interno (usuário do gabinete) ou externo (nome informado).
+create or replace function minuta_pedir_parecer(
+  p_minuta      uuid,
+  p_questao     text,
+  p_usuario     uuid default null,
+  p_nome_externo text default null
+)
+returns minuta_pareceres
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_solicitante uuid;
+  v_papel text;
+  v_linha minuta_pareceres;
+  v_hab text; v_reg text;
+begin
+  select u.id, u.papel::text into v_solicitante, v_papel
+  from usuarios u
+  where u.auth_user_id = nullif(evora_claims() ->> 'sub', '')::uuid
+    and u.ativo;
+
+  if v_solicitante is null then
+    raise exception 'Sem identidade ativa.';
+  end if;
+
+  if v_papel not in ('autoridade','chefe_gabinete') then
+    raise exception 'Papel % não solicita parecer sobre minuta.', v_papel;
+  end if;
+
+  if p_questao is null or length(trim(p_questao)) < 10 then
+    raise exception 'Informe sobre qual ponto se pede o parecer.';
+  end if;
+
+  if p_usuario is null and p_nome_externo is null then
+    raise exception 'Informe o parecerista: usuário do gabinete ou nome do externo.';
+  end if;
+
+  -- Habilitação copiada no momento, para valer no tempo mesmo que a
+  -- pessoa mude de qualificação depois.
+  if p_usuario is not null then
+    select u.habilitacao, u.habilitacao_registro into v_hab, v_reg
+    from usuarios u where u.id = p_usuario;
+  end if;
+
+  insert into minuta_pareceres (
+    minuta_id, tenant_id, solicitado_por, questao,
+    parecerista_usuario, parecerista_nome,
+    parecerista_habilitacao, parecerista_registro
+  )
+  select p_minuta, m.tenant_id, v_solicitante, p_questao,
+         p_usuario, p_nome_externo, v_hab, v_reg
+  from minutas m
+  where m.id = p_minuta and m.tenant_id = evora_tenant_atual()
+  returning * into v_linha;
+
+  if v_linha.id is null then
+    raise exception 'Minuta não encontrada neste gabinete.';
+  end if;
+
+  return v_linha;
+end $$;
+
+comment on function minuta_pedir_parecer is
+'Fase 13 — a autoridade pede parecer caso a caso. Funciona igual para parecerista interno ou externo.';
+
+-- Informa se há parecer e qual a conclusão — NÃO bloqueia a aprovação, a
+-- decisão continua sendo da autoridade (minuta_decidir não consulta esta
+-- função).
+create or replace function minuta_situacao_parecer(p_minuta uuid)
+returns table (
+  tem_parecer_pendente boolean,
+  tem_parecer_emitido  boolean,
+  conclusao            text,
+  ressalva             text,
+  parecerista          text,
+  habilitacao          text,
+  dispensado           boolean,
+  dispensa_motivo      text
+)
+language sql
+stable
+as $$
+  select
+    bool_or(p.emitido_em is null and not p.dispensado),
+    bool_or(p.emitido_em is not null),
+    (array_agg(p.conclusao::text order by p.emitido_em desc nulls last))[1],
+    (array_agg(p.ressalva order by p.emitido_em desc nulls last))[1],
+    (array_agg(coalesce(u.nome, p.parecerista_nome)
+               order by p.emitido_em desc nulls last))[1],
+    (array_agg(p.parecerista_habilitacao order by p.emitido_em desc nulls last))[1],
+    bool_or(p.dispensado),
+    (array_agg(p.dispensa_motivo order by p.dispensado_em desc nulls last))[1]
+  from minuta_pareceres p
+  left join usuarios u on u.id = p.parecerista_usuario
+  where p.minuta_id = p_minuta;
+$$;
+
+comment on function minuta_situacao_parecer is
+'Fase 13 — informa se há parecer e qual a conclusão. NÃO bloqueia a aprovação — a decisão é da autoridade.';
+
+grant select on minuta_pareceres to authenticated;
+revoke execute on function minuta_pedir_parecer(uuid, text, uuid, text) from public, anon;
+grant execute on function minuta_pedir_parecer(uuid, text, uuid, text) to authenticated;
+revoke execute on function minuta_situacao_parecer(uuid) from public, anon;
+grant execute on function minuta_situacao_parecer(uuid) to authenticated;
 
 -- =====================================================================
 -- TESTE DE ACEITE — a prova que vira argumento de venda

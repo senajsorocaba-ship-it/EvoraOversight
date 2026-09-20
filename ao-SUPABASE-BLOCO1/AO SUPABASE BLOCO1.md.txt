@@ -164,6 +164,98 @@ do $$ begin
   create type veritas_nivel as enum ('artigo', 'paragrafo', 'inciso', 'alinea', 'item');
 exception when duplicate_object then null; end $$;
 
+-- Fase 13 (Manual v11.1) — Inteligência Legislativa (Skill
+-- evora-veritas-inteligencia-legislativa v1.0 GOLD). Onde mora a MATÉRIA
+-- (proposição com tramitação) — nem o FARUS (fatos) nem o Veritas (normas)
+-- tinham onde guardar isso. Ver a seção 21 de evora_rls_mvp_v1.sql.
+
+-- § 4 — espécies de matéria, conforme o ente legislativo
+do $$ begin
+  create type legis_especie as enum (
+    'projeto_lei','projeto_lei_complementar','proposta_emenda',
+    'medida_provisoria','decreto_legislativo','resolucao',
+    'requerimento','indicacao','mocao','veto',
+    'parecer','substitutivo','emenda','relatorio','materia_correlata'
+  );
+exception when duplicate_object then null; end $$;
+
+-- § 5 — STATUS FORMAL: o que a Casa declara.
+do $$ begin
+  create type legis_status_formal as enum (
+    'em_tramitacao','aprovado','rejeitado','arquivado','retirado',
+    'convertido_em_norma','vetado','aguardando_sancao','promulgado'
+  );
+exception when duplicate_object then null; end $$;
+
+-- § 5 — STATUS OPERACIONAL: onde a matéria realmente está. NUNCA é
+-- deduzido do formal — são dimensões independentes, essa é a trava central
+-- da Skill ("em tramitação" não significa que esteja avançando).
+do $$ begin
+  create type legis_status_operacional as enum (
+    'aguardando_parecer','aguardando_distribuicao','aguardando_pauta',
+    'aguardando_votacao','aguardando_manifestacao_comissao',
+    'sem_movimentacao_material','pauta_publicada','reuniao_agendada',
+    'decisao_sem_data','dependente_de_outra_materia'
+  );
+exception when duplicate_object then null; end $$;
+
+-- § 9 — as CINCO naturezas de previsão. A trava contra converter
+-- expectativa em previsão oficial vive aqui.
+do $$ begin
+  create type legis_natureza_previsao as enum (
+    'decisao_oficial_prevista', 'reuniao_agendada', 'pauta_publicada',
+    'expectativa_nao_oficial', 'nenhuma_previsao'
+  );
+exception when duplicate_object then null; end $$;
+
+-- § 7 e § 10 — natureza do órgão.
+do $$ begin
+  create type legis_natureza_orgao as enum (
+    'comissao_permanente','comissao_temporaria','comissao_especial',
+    'comissao_estudo','cpi','subcomissao','grupo_trabalho',
+    'mesa_diretora','plenario','secretaria_legislativa','orgao_tecnico'
+  );
+exception when duplicate_object then null; end $$;
+
+-- § 8 — eventos de tramitação.
+do $$ begin
+  create type legis_tipo_evento as enum (
+    'apresentacao','distribuicao','designacao_relator','parecer_emitido',
+    'pedido_vista','inclusao_pauta','retirada_pauta','votacao',
+    'aprovacao','rejeicao','redistribuicao','devolucao','arquivamento',
+    'desarquivamento','movimentacao_administrativa'
+  );
+exception when duplicate_object then null; end $$;
+
+-- Fase 13 (Manual v11.1) — Resposta e Minutas. Registro de linguagem
+-- (simples/técnico/ambos) e o ciclo de vida da minuta, com o freio humano
+-- no meio: o Évora nunca envia, só guarda a minuta e a decisão.
+do $$ begin
+  create type evora_registro as enum ('simples', 'tecnico', 'ambos');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type minuta_especie as enum (
+    'requerimento','oficio','pedido_informacao','indicacao','mocao',
+    'nota_publica','relatorio'
+  );
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type minuta_estado as enum (
+    'rascunho','aguardando_aprovacao','aprovada','descartada','protocolada'
+  );
+exception when duplicate_object then null; end $$;
+
+-- Fase 13 (Manual v11.1) — Parecer como Evento: solicitado caso a caso,
+-- nunca etapa obrigatória do fluxo. Não aprova nada — só a autoridade
+-- aprova, mesmo com parecer contrário.
+do $$ begin
+  create type minuta_parecer_conclusao as enum (
+    'favoravel', 'favoravel_com_ressalva', 'contrario', 'inconclusivo'
+  );
+exception when duplicate_object then null; end $$;
+
 -- ---------------------------------------------------------------------
 -- 1. TENANTS — cada gabinete cliente
 -- ---------------------------------------------------------------------
@@ -965,6 +1057,364 @@ create table if not exists veritas_carga (
 
 comment on table veritas_carga is 'Fase 12 — trilha de carregamento do Veritas. Append-only (trigger abaixo).';
 
+-- =====================================================================
+-- FASE 13 (Manual v11.1) — INTELIGÊNCIA LEGISLATIVA, RESPOSTA/MINUTAS e
+-- PARECER COMO EVENTO. Adaptado de `11_legis_inteligencia.sql` (12/12
+-- testes) + `13_resposta_minutas.sql` (12/12) + `15_parecer_evento.sql`
+-- (11/11), entregues já testados — arquivos as-delivered em
+-- `_versoes_anteriores/legis_resposta_parecer_entregues_v11_1/`. ÚNICA
+-- ADAPTAÇÃO REAL: os arquivos entregues usam `auth.uid()`; este projeto
+-- nunca usa esse helper — usa `evora_claims() ->> 'sub'` (mesma adaptação
+-- já feita no Aegis, seção 17 de evora_rls_mvp_v1.sql). Nenhuma trava
+-- muda de comportamento com isso.
+-- =====================================================================
+
+-- Resposta e Minutas — LACUNA 1: registro de linguagem. O gabinete tem um
+-- padrão (Entrevista de Fundação); a pessoa pode sobrepor.
+alter table tenants
+  add column if not exists registro_padrao evora_registro not null default 'ambos';
+comment on column tenants.registro_padrao is 'Fase 13 — registro de linguagem do gabinete (simples/tecnico/ambos). Definido na Entrevista de Fundação.';
+
+alter table usuarios
+  add column if not exists registro_preferido evora_registro,
+  add column if not exists habilitacao text,
+  add column if not exists habilitacao_registro text;
+comment on column usuarios.registro_preferido is 'Fase 13 — sobrepõe o padrão do tenant. Nulo = usa o do gabinete. A chefia pode querer técnico e a autoridade simples.';
+comment on column usuarios.habilitacao is 'Fase 13 — qualificação profissional da pessoa (ex.: advogado). NÃO é papel: não altera alçada (decisão do fundador, 20/09/2026 — "ter advogado assessor é um acaso").';
+comment on column usuarios.habilitacao_registro is 'Fase 13 — número de inscrição profissional, quando houver. Informativo — o sistema não valida junto ao conselho.';
+
+-- Resposta e Minutas — LACUNA 3: qual registro a autoridade recebeu.
+alter table briefings
+  add column if not exists registro_entregue evora_registro,
+  add column if not exists markdown_tecnico text,
+  add column if not exists html_tecnico text;
+comment on column briefings.registro_entregue is 'Fase 13 — qual registro a autoridade recebeu. Importa na trilha: "o briefing dizia X" precisa dizer em qual versão.';
+comment on column briefings.markdown_tecnico is 'Fase 13 — versão técnica, quando o registro for tecnico ou ambos. A coluna markdown guarda a versão simples.';
+
+-- ---------------------------------------------------------------------
+-- 28. LEGIS_PESSOAS — parlamentares, relatores e autoridades. § 40 da
+-- Skill (entidade Person). Partido vem da própria pauta.
+-- ---------------------------------------------------------------------
+create table if not exists legis_pessoas (
+  id            uuid primary key default gen_random_uuid(),
+  territorio_id uuid not null references farus_territorios(id) on delete restrict,
+  nome          text not null,
+  partido       text,
+  cargo         text,
+  ativo         boolean not null default true,
+  fonte_url     text,
+  verificado_por text,
+  criado_em     timestamptz not null default now()
+);
+
+comment on table legis_pessoas is 'Fase 13 — § 40 da Skill. Parlamentares, relatores e autoridades.';
+
+-- ---------------------------------------------------------------------
+-- 29. LEGIS_ORGAOS — comissões permanentes/temporárias, CPIs, grupos de
+-- trabalho e órgãos técnicos (§ 7 e § 10). Órgão temporário tem início e
+-- fim.
+-- ---------------------------------------------------------------------
+create table if not exists legis_orgaos (
+  id            uuid primary key default gen_random_uuid(),
+  territorio_id uuid not null references farus_territorios(id) on delete restrict,
+  nome          text not null,
+  natureza      legis_natureza_orgao not null,
+  competencia   text,
+  criado_em_ato text,
+  inicio        date,
+  termino       date,
+  fonte_url     text,
+  registrado_em timestamptz not null default now()
+);
+
+comment on table legis_orgaos is 'Fase 13 — § 7 e § 10. Comissões permanentes/temporárias, CPIs, grupos de trabalho, órgãos técnicos.';
+
+-- ---------------------------------------------------------------------
+-- 30. LEGIS_COMPOSICOES — § 7: composição versionada por período. A Skill
+-- é explícita: "nunca substituir simplesmente a composição histórica pela
+-- atual" — responde quem compunha a comissão QUANDO a matéria foi
+-- analisada, não só quem compõe hoje.
+-- ---------------------------------------------------------------------
+create table if not exists legis_composicoes (
+  id          uuid primary key default gen_random_uuid(),
+  orgao_id    uuid not null references legis_orgaos(id) on delete cascade,
+  pessoa_id   uuid not null references legis_pessoas(id) on delete restrict,
+  papel       text not null,
+  inicio      date not null,
+  termino     date,
+  substituiu  uuid references legis_pessoas(id) on delete set null,
+  fonte_url   text,
+  registrado_em timestamptz not null default now(),
+
+  constraint legis_comp_periodo check (termino is null or termino >= inicio)
+);
+
+comment on table legis_composicoes is 'Fase 13 — § 7. Composição versionada por período. Responde "quem fazia parte à época", não só "quem faz hoje".';
+
+-- ---------------------------------------------------------------------
+-- 31. LEGIS_MATERIAS — a proposição em si (§ 4, § 5, § 40). Duas
+-- dimensões INDEPENDENTES: status_formal (o que a Casa declara) e
+-- status_operacional (onde a matéria realmente está) — o banco nunca
+-- deduz um do outro.
+-- ---------------------------------------------------------------------
+create table if not exists legis_materias (
+  id            uuid primary key default gen_random_uuid(),
+  territorio_id uuid not null references farus_territorios(id) on delete restrict,
+
+  especie       legis_especie not null,
+  numero        text,
+  ano           integer,
+  processo      text,
+  ementa        text not null,
+  assunto       text[],
+  autor_id      uuid references legis_pessoas(id) on delete set null,
+  coautores     uuid[],
+
+  status_formal      legis_status_formal not null default 'em_tramitacao',
+  status_operacional legis_status_operacional,
+
+  orgao_atual_id uuid references legis_orgaos(id) on delete set null,
+  relator_id     uuid references legis_pessoas(id) on delete set null,
+  relator_desde  date,
+
+  -- § 13 — memória legislativa: matéria reapresentada
+  materia_anterior uuid references legis_materias(id) on delete set null,
+
+  -- § 15 — relação com o acervo normativo (Veritas, Fase 12)
+  norma_relacionada uuid references veritas_normas(id) on delete set null,
+
+  fonte_url      text,
+  apresentada_em date,
+  capturada_em   timestamptz not null default now(),
+  verificado_por text,
+  verificado_em  timestamptz,
+
+  constraint legis_materia_nao_circular check (materia_anterior is distinct from id),
+
+  -- § 44: só afirma o que foi verificado
+  constraint legis_materia_verificacao check (
+    verificado_por is null or verificado_em is not null
+  )
+);
+
+comment on column legis_materias.status_formal is 'Fase 13 — § 5. O que a Casa declara. NUNCA deduzir o operacional a partir deste campo.';
+comment on column legis_materias.status_operacional is 'Fase 13 — § 5. Onde a matéria realmente está. Constar como "em tramitação" não significa avançar.';
+
+-- ---------------------------------------------------------------------
+-- 32. LEGIS_EVENTOS — tramitação (§ 6, § 8). `material` é a chave da
+-- detecção de matéria parada: juntada/numeração/conferência NÃO conta
+-- como avanço.
+-- ---------------------------------------------------------------------
+create table if not exists legis_eventos (
+  id          uuid primary key default gen_random_uuid(),
+  materia_id  uuid not null references legis_materias(id) on delete cascade,
+  tipo        legis_tipo_evento not null,
+  ocorrido_em date not null,
+  orgao_id    uuid references legis_orgaos(id) on delete set null,
+  pessoa_id   uuid references legis_pessoas(id) on delete set null,
+  descricao   text,
+  material    boolean not null default true,
+  fonte_url   text,
+  capturado_em timestamptz not null default now()
+);
+
+comment on column legis_eventos.material is 'Fase 13 — § 6. false para juntada, numeração e conferência. Movimentação administrativa não é avanço.';
+
+-- ---------------------------------------------------------------------
+-- 33. LEGIS_PARECERES — pareceres/relatórios/votos de relator na
+-- tramitação (§ 8). Distinto de `minuta_pareceres` (tabela 38), que é
+-- parecer sobre MINUTA do próprio gabinete, não sobre matéria da Casa.
+-- ---------------------------------------------------------------------
+create table if not exists legis_pareceres (
+  id          uuid primary key default gen_random_uuid(),
+  materia_id  uuid not null references legis_materias(id) on delete cascade,
+  orgao_id    uuid references legis_orgaos(id) on delete set null,
+  relator_id  uuid references legis_pessoas(id) on delete set null,
+  tipo        text not null,
+  conclusao   text,
+  emitido_em  date,
+  fonte_url   text,
+  capturado_em timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------
+-- 34. LEGIS_PAUTAS — sessões e suas versões publicadas (§ 9).
+-- ---------------------------------------------------------------------
+create table if not exists legis_pautas (
+  id            uuid primary key default gen_random_uuid(),
+  territorio_id uuid not null references farus_territorios(id) on delete restrict,
+  orgao_id      uuid references legis_orgaos(id) on delete set null,
+  sessao_numero text,
+  sessao_tipo   text,
+  realizada_em  date not null,
+  horario       time,
+  publicada_em  timestamptz,
+  versao        text,
+  fonte_url     text,
+  capturada_em  timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------
+-- 35. LEGIS_PAUTA_MATERIAS — matéria incluída numa pauta, com a natureza
+-- da previsão (§ 9, § 42). Nunca converter reunião marcada em votação
+-- garantida, nem expectativa em previsão oficial.
+-- ---------------------------------------------------------------------
+create table if not exists legis_pauta_materias (
+  id          uuid primary key default gen_random_uuid(),
+  pauta_id    uuid not null references legis_pautas(id) on delete cascade,
+  materia_id  uuid not null references legis_materias(id) on delete cascade,
+  ordem       integer,
+  fase        text,
+  natureza_previsao legis_natureza_previsao not null,
+  resultado   text,
+  observacao  text,
+
+  constraint legis_pauta_materia_unica unique (pauta_id, materia_id)
+);
+
+comment on column legis_pauta_materias.natureza_previsao is 'Fase 13 — § 9 e § 42. Nunca converter reunião marcada em votação garantida, nem expectativa em previsão oficial.';
+
+-- ---------------------------------------------------------------------
+-- 36. MINUTAS — documentos para APROVAÇÃO HUMANA (§ 2 e § 36 da Skill).
+-- O Évora nunca envia: guarda a minuta e o registro da decisão; o envio é
+-- ato humano fora do sistema (não há campo de "enviado por nós").
+-- ---------------------------------------------------------------------
+create table if not exists minutas (
+  id          uuid primary key default gen_random_uuid(),
+  tenant_id   uuid not null references tenants(id) on delete cascade,
+  mundo       evora_mundo not null default 'gabinete',
+
+  especie     minuta_especie not null,
+  assunto     text not null,
+  destinatario text,
+
+  texto_simples text,
+  texto_tecnico text,
+
+  -- § 39 — toda minuta nasce de um fato, matéria ou norma verificável
+  materia_id  uuid references legis_materias(id) on delete set null,
+  item_farus  uuid references farus_itens(id) on delete set null,
+  norma_id    uuid references veritas_normas(id) on delete set null,
+  fundamento  text,
+
+  estado      minuta_estado not null default 'rascunho',
+  gerada_em   timestamptz not null default now(),
+  gerada_por  text not null default 'motor',
+  submetida_em timestamptz,
+  decidida_por uuid references usuarios(id) on delete set null,
+  decidida_em timestamptz,
+  motivo_decisao text,
+
+  -- A pessoa informa que protocolou fora do sistema — o Évora não protocola
+  protocolo_informado text,
+  protocolo_em        date,
+
+  -- TRAVA 1: decisão exige quem e quando — o freio humano imposto pelo banco.
+  constraint minuta_decisao_registrada check (
+    estado not in ('aprovada','descartada')
+    or (decidida_por is not null and decidida_em is not null)
+  ),
+  -- TRAVA 2: descarte exige motivo — recusa sem razão não se audita.
+  constraint minuta_descarte_com_motivo check (
+    estado <> 'descartada' or motivo_decisao is not null
+  ),
+  -- TRAVA 3: só se protocola o que foi aprovado.
+  constraint minuta_protocolo_exige_aprovacao check (
+    estado <> 'protocolada' or decidida_por is not null
+  ),
+  -- TRAVA 4: a minuta precisa ter ao menos um texto.
+  constraint minuta_tem_texto check (
+    texto_simples is not null or texto_tecnico is not null
+  ),
+  -- TRAVA 5: § 39 — nunca nasce de nada (rastreabilidade).
+  constraint minuta_tem_origem check (
+    materia_id is not null or item_farus is not null or norma_id is not null
+  )
+);
+
+comment on table minutas is 'Fase 13 — § 2 e § 36 da Skill. Documentos para aprovação humana. O Évora nunca envia.';
+comment on column minutas.protocolo_informado is 'Fase 13 — preenchido pela PESSOA, após protocolar fora do sistema. O Évora não protocola.';
+
+-- ---------------------------------------------------------------------
+-- 37. MINUTA_EVENTOS — trilha da minuta. Append-only (trigger abaixo),
+-- mesma disciplina de auditoria/aegis_acessos/veritas_carga.
+-- ---------------------------------------------------------------------
+create table if not exists minuta_eventos (
+  id         uuid primary key default gen_random_uuid(),
+  minuta_id  uuid not null references minutas(id) on delete cascade,
+  tenant_id  uuid not null references tenants(id) on delete cascade,
+  de_estado  minuta_estado,
+  para_estado minuta_estado not null,
+  quem       text not null,
+  motivo     text,
+  ocorrido_em timestamptz not null default now()
+);
+
+comment on table minuta_eventos is 'Fase 13 — trilha de mudança de estado da minuta. Append-only (trigger abaixo), gravada automaticamente por minuta_registrar_mudanca.';
+
+-- ---------------------------------------------------------------------
+-- 38. MINUTA_PARECERES — parecer como EVENTO solicitado caso a caso pela
+-- autoridade, nunca etapa obrigatória (decisão do fundador, 20/09/2026).
+-- Distinto de `legis_pareceres` (tabela 33), que é parecer do relator na
+-- matéria da Casa. Não aprova nada — só a autoridade aprova.
+-- ---------------------------------------------------------------------
+create table if not exists minuta_pareceres (
+  id          uuid primary key default gen_random_uuid(),
+  minuta_id   uuid not null references minutas(id) on delete cascade,
+  tenant_id   uuid not null references tenants(id) on delete cascade,
+
+  solicitado_por uuid not null references usuarios(id) on delete restrict,
+  solicitado_em  timestamptz not null default now(),
+  questao        text not null,
+
+  -- Interno OU externo ao gabinete, o registro é o mesmo
+  parecerista_usuario uuid references usuarios(id) on delete set null,
+  parecerista_nome    text,
+  parecerista_habilitacao text,  -- copiada no momento, vale no tempo
+  parecerista_registro    text,
+
+  conclusao   minuta_parecer_conclusao,
+  texto       text,
+  ressalva    text,             -- o que precisa mudar, se favoravel_com_ressalva
+  emitido_em  timestamptz,
+
+  dispensado          boolean not null default false,
+  dispensa_motivo     text,
+  dispensado_por      uuid references usuarios(id) on delete set null,
+  dispensado_em       timestamptz,
+
+  criado_em   timestamptz not null default now(),
+
+  -- TRAVA 1: parecer emitido exige quem o emitiu (interno ou externo).
+  constraint parecer_tem_autor check (
+    emitido_em is null
+    or parecerista_usuario is not null
+    or (parecerista_nome is not null and length(trim(parecerista_nome)) > 2)
+  ),
+  -- TRAVA 2: parecer emitido exige conclusão e texto.
+  constraint parecer_emitido_completo check (
+    emitido_em is null or (conclusao is not null and texto is not null)
+  ),
+  -- TRAVA 3: ressalva exige dizer o que precisa mudar.
+  constraint parecer_ressalva_explicita check (
+    conclusao <> 'favoravel_com_ressalva' or ressalva is not null
+  ),
+  -- TRAVA 4: dispensar exige motivo e quem dispensou — proteção da autoridade.
+  constraint parecer_dispensa_registrada check (
+    not dispensado
+    or (dispensa_motivo is not null and dispensado_por is not null
+        and dispensado_em is not null)
+  ),
+  -- TRAVA 5: ou se emite, ou se dispensa — nunca os dois.
+  constraint parecer_nao_emitido_e_dispensado check (
+    not (dispensado and emitido_em is not null)
+  )
+);
+
+comment on table minuta_pareceres is 'Fase 13 — parecer é EVENTO solicitado caso a caso, não etapa obrigatória. Não aprova: quem aprova é a autoridade.';
+comment on column minuta_pareceres.parecerista_habilitacao is 'Fase 13 — copiada no momento do parecer. Se a pessoa mudar de habilitação depois, o parecer preserva a da época.';
+comment on column minuta_pareceres.dispensado is 'Fase 13 — a autoridade pode seguir sem parecer. A dispensa fica registrada — proteção dela, não do sistema.';
+
 -- ---------------------------------------------------------------------
 -- ÍNDICES — consultas do dia a dia
 -- ---------------------------------------------------------------------
@@ -1002,6 +1452,28 @@ create index if not exists ix_veritas_normas_busca on veritas_normas using gin (
 create index if not exists ix_veritas_dispositivos_norma on veritas_dispositivos (norma_id, ordem);
 create index if not exists ix_veritas_dispositivos_busca on veritas_dispositivos using gin (to_tsvector('portuguese', texto));
 create index if not exists ix_veritas_carga_norma on veritas_carga (norma_id, ocorrido_em desc);
+
+-- Fase 13 — Inteligência Legislativa
+create unique index if not exists ix_legis_pessoa_unica on legis_pessoas (territorio_id, lower(nome));
+create unique index if not exists ix_legis_orgao_unico on legis_orgaos (territorio_id, lower(nome), coalesce(inicio, '1900-01-01'::date));
+create index if not exists ix_legis_comp_periodo on legis_composicoes (orgao_id, inicio, termino);
+create unique index if not exists ix_legis_materia_unica on legis_materias (territorio_id, especie, coalesce(numero,''), coalesce(ano,0));
+create index if not exists ix_legis_materia_ementa on legis_materias using gin (to_tsvector('portuguese', ementa));
+create index if not exists ix_legis_materia_assunto on legis_materias using gin (assunto);
+create index if not exists ix_legis_materia_autor on legis_materias (autor_id);
+create index if not exists ix_legis_materia_relator on legis_materias (relator_id);
+create index if not exists ix_legis_materia_orgao on legis_materias (orgao_atual_id);
+create index if not exists ix_legis_evento_materia on legis_eventos (materia_id, ocorrido_em desc);
+create index if not exists ix_legis_evento_material on legis_eventos (materia_id, ocorrido_em desc) where material;
+create index if not exists ix_legis_parecer_materia on legis_pareceres (materia_id, emitido_em desc);
+create index if not exists ix_legis_pauta_data on legis_pautas (territorio_id, realizada_em desc);
+
+-- Fase 13 — Resposta/Minutas e Parecer
+create index if not exists ix_minutas_tenant on minutas (tenant_id, estado, gerada_em desc);
+create index if not exists ix_minutas_pendentes on minutas (tenant_id) where estado = 'aguardando_aprovacao';
+create index if not exists ix_minuta_eventos on minuta_eventos (minuta_id, ocorrido_em desc);
+create index if not exists ix_minuta_pareceres on minuta_pareceres (minuta_id, criado_em desc);
+create index if not exists ix_pareceres_pendentes on minuta_pareceres (tenant_id) where emitido_em is null and not dispensado;
 
 -- ---------------------------------------------------------------------
 -- FARUS — REGRA ÚNICA DE DEDUPLICAÇÃO E RETENÇÃO
@@ -1090,6 +1562,42 @@ drop trigger if exists trg_veritas_carga_imutavel on veritas_carga;
 create trigger trg_veritas_carga_imutavel
   before update or delete on veritas_carga
   for each row execute function veritas_carga_imutavel();
+
+-- Trilha da minuta: mesma disciplina de append-only. Registrada
+-- automaticamente a cada mudança de estado (inclusive a criação) — quem
+-- decidiu vem de usuarios.nome quando houver decidida_por, senão de
+-- gerada_por ('motor').
+create or replace function minuta_trilha_imutavel()
+returns trigger language plpgsql as $$
+begin
+  raise exception 'Trilha de minuta é imutável. Tentativa de % rejeitada.', tg_op;
+end $$;
+
+drop trigger if exists trg_minuta_trilha on minuta_eventos;
+create trigger trg_minuta_trilha
+  before update or delete on minuta_eventos
+  for each row execute function minuta_trilha_imutavel();
+
+create or replace function minuta_registrar_mudanca()
+returns trigger language plpgsql as $$
+begin
+  if tg_op = 'INSERT' or old.estado is distinct from new.estado then
+    insert into minuta_eventos (minuta_id, tenant_id, de_estado, para_estado, quem, motivo)
+    values (new.id, new.tenant_id,
+            case when tg_op='INSERT' then null else old.estado end,
+            new.estado,
+            coalesce(
+              (select u.nome from usuarios u where u.id = new.decidida_por),
+              new.gerada_por),
+            new.motivo_decisao);
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists trg_minuta_mudanca on minutas;
+create trigger trg_minuta_mudanca
+  after insert or update on minutas
+  for each row execute function minuta_registrar_mudanca();
 
 -- ---------------------------------------------------------------------
 -- ATUALIZAÇÃO AUTOMÁTICA DE atualizado_em

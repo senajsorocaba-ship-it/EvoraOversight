@@ -24,7 +24,7 @@ nem deploy do front, nem agendador ativo. Tudo abaixo foi validado contra um
 
 | Camada | Estado |
 |---|---|
-| **Schema + RLS** (BLOCOs 1–3) | ✅ 24 tabelas, políticas de isolamento por tenant, teste de aceite da RLS passando (4/4 cenários) |
+| **Schema + RLS** (BLOCOs 1–3) | ✅ 39 tabelas (base + Fases 6–13), políticas de isolamento por tenant, teste de aceite da RLS passando (4/4 cenários) |
 | **Motor do briefing** (BLOCO 4) | ✅ Funções `evora_montar_blocos_briefing` / `evora_gerar_briefing_diario` — agregam os 7 blocos canônicos |
 | **Autenticação** (BLOCO 5) | ✅ local (auto-vínculo `auth.users` → `usuarios`, `tenant_id`/`mundo` no JWT via Custom Access Token Hook). ⚠️ **Nunca rodado na nuvem** — exige um passo manual no dashboard (habilitar o hook) |
 | **Coletores** (Fases 6–9) | ✅ Ingestão PNCP/imprensa, Atlas Municipal, coletor de menções por nome, vigia de vereadores — testados contra APIs reais |
@@ -33,7 +33,8 @@ nem deploy do front, nem agendador ativo. Tudo abaixo foi validado contra um
 | **Bia por voz** | ✅ local — ativação por palavra-chave ("Bia…"), navegação, perguntas respondidas com dado do próprio tenant, resposta em streaming, fila de fala. Sem invenção (Cláusula de Caráter Travado) |
 | **Painel web** | ⚠️ 16 telas com layout pronto, mas **só `/briefing` está ligada a dado real** — o resto é maquete estática (portada do PDF de demonstração) |
 | **Reconhecimento facial** (modo descanso) | 🟡 STAND-BY — implementado, **não testado** |
-| **Manual Supremo v11.0** (16/09/2026) | 🟡 Parcial — hook renomeado (`evora_token_hook`), módulo Demandas travado no banco até parecer jurídico, 2 coletores "confirmado" novos (PNCP + Agenda Legislativa, ambos aguardando uma `farus_fontes` liberada por humano pra rodar de verdade). **Veritas** (acervo legal — normas, o que *vale* e não o que *aconteceu*) ✅ schema construído (`veritas_normas`/`veritas_dispositivos`/`veritas_carga`, sem policy de acesso, só via `veritas_consultar`/`veritas_vigente_em`) + extrator de carga curada (`extrator_veritas.py`) — **não rodado contra banco real ainda** (Docker local desligado nesta sessão) |
+| **Manual Supremo v11.0** (16/09/2026) | 🟡 Parcial — hook renomeado (`evora_token_hook`), módulo Demandas travado no banco até parecer jurídico, 2 coletores "confirmado" novos (PNCP + Agenda Legislativa, ambos aguardando uma `farus_fontes` liberada por humano pra rodar de verdade). **Veritas** (acervo legal — normas, o que *vale* e não o que *aconteceu*) ✅ schema construído (`veritas_normas`/`veritas_dispositivos`/`veritas_carga`, sem policy de acesso, só via `veritas_consultar`/`veritas_vigente_em`) + extrator de carga curada (`extrator_veritas.py`) |
+| **Manual Supremo v11.1** (20/09/2026) | ✅ Schema construído — **Inteligência Legislativa** (matéria com tramitação, 8 tabelas, compartilhado por território), **Resposta/Minutas** (freio humano para tudo que o gabinete manda pra fora — Évora nunca envia, só registra), **Parecer como Evento** (habilitação é da pessoa, nunca vira papel novo). Testes de aceite entregues (12/12, 12/12, 11/11) copiados pro repo. **Item pendente**: fluxo do requerimento colide com a trava de "não contatar terceiros" — aguarda decisão do fundador (`FILA_v11_1.md`, item 6). **Nada disto rodado contra banco real ainda** (Docker local desligado nesta sessão) |
 
 ### Briefing — blocos com dado real
 
@@ -51,7 +52,7 @@ Três componentes, **um repositório só**:
 
 ```
 ┌─ web/ ─────────────┐     ┌─ Supabase (Postgres) ─┐
-│ Next.js 16         │────▶│ 24 tabelas + RLS      │
+│ Next.js 16         │────▶│ 39 tabelas + RLS      │
 │ Painel + Bia (voz) │◀────│ funções do briefing   │
 └────────────────────┘     └───────────┬───────────┘
                                        │ service_role
@@ -80,14 +81,15 @@ Três componentes, **um repositório só**:
 | Caminho | O que é |
 |---|---|
 | `web/` | Aplicação Next.js (painel do gabinete + Bia por voz) |
-| `supabase/migrations/` | Migrations do Postgres (schema, RLS, motor, auth, atlas, FARUS, Aegis) |
+| `supabase/migrations/` | Migrations do Postgres (schema, RLS, motor, auth, atlas, FARUS, Aegis, Veritas, Inteligência Legislativa/Resposta/Parecer) |
 | `ao-SUPABASE-BLOCO1/` | SQL de referência (BLOCOs 1–5) + motor e coletores em Python + `CLAUDE.md` com o histórico de decisões por fase |
 | `.github/workflows/` | `briefing-diario.yml` — cron do briefing |
 | `motor/` | Pipeline original pré-Supabase (coletores + montador), mantido como referência |
-| `Evora Manual v10 9 1.md` | Manual do produto — fonte da verdade sobre escopo, fases e princípios |
-| `Evora_Caderno_Programador.pdf` | Companheiro do Manual v11.0 — o quê e em que ordem (não o porquê). Versão mais recente recebida 20/09 |
+| `Evora_Manual_v11_1.md` | Manual do produto — fonte da verdade sobre escopo, fases e princípios (substitui a v10.9.1, arquivada) |
+| `FILA_v11_1.md` | O que entrou depois da emissão da v11.0 — itens novos, decisões e pendências do fundador |
+| `Evora_Caderno_Programador.pdf` | Companheiro do Manual v11.0 — o quê e em que ordem (não o porquê) |
 | `Evora_Checklist_Lancamento.pdf` | Checklist de negócio pro lançamento — 3 "portões" (operar com dado real / cobrar / oferecer ao mercado), a maior parte fora do escopo técnico deste repo |
-| `_versoes_anteriores/` | Arquivo morto (manuais antigos, protótipos, exports, versões superadas do Caderno) |
+| `_versoes_anteriores/` | Arquivo morto (manuais antigos, protótipos, exports, pacotes entregues já adaptados) |
 
 ---
 
@@ -125,8 +127,8 @@ python evora_motor_execucao.py  --tenant-id <uuid> --mundo gabinete
 
 ## O que falta para o lançamento (deploy)
 
-1. **Commit + push** de todo o trabalho pendente (feito).
-2. **`supabase db push`** — aplicar as 16 migrations no projeto Supabase da nuvem.
+1. **Commit + push** de todo o trabalho pendente (feito — falta só o `push`).
+2. **`supabase db push`** — aplicar as 17 migrations no projeto Supabase da nuvem.
 3. **Dashboard do Supabase (nuvem)**, passos que nenhum SQL faz:
    - Auth → Hooks → habilitar Custom Access Token → `evora_token_hook`
      (**bloqueador** — sem isso o JWT não carrega `tenant_id` e a RLS zera tudo)
