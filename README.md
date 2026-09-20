@@ -33,7 +33,7 @@ nem deploy do front, nem agendador ativo. Tudo abaixo foi validado contra um
 | **Bia por voz** | ✅ local — ativação por palavra-chave ("Bia…"), navegação, perguntas respondidas com dado do próprio tenant, resposta em streaming, fila de fala. Sem invenção (Cláusula de Caráter Travado) |
 | **Painel web** | ⚠️ 16 telas com layout pronto, mas **só `/briefing` está ligada a dado real** — o resto é maquete estática (portada do PDF de demonstração) |
 | **Reconhecimento facial** (modo descanso) | 🟡 STAND-BY — implementado, **não testado** |
-| **Manual Supremo v11.0** (16/09/2026) | 🟡 Parcial — hook renomeado (`evora_token_hook`), módulo Demandas travado no banco até parecer jurídico, 2 coletores "confirmado" novos (PNCP + Agenda Legislativa, ambos aguardando uma `farus_fontes` liberada por humano pra rodar de verdade). **Veritas** (acervo legal) ainda não construído — o Caderno só especifica 2 assinaturas de função, sem DDL de tabela |
+| **Manual Supremo v11.0** (16/09/2026) | 🟡 Parcial — hook renomeado (`evora_token_hook`), módulo Demandas travado no banco até parecer jurídico, 2 coletores "confirmado" novos (PNCP + Agenda Legislativa, ambos aguardando uma `farus_fontes` liberada por humano pra rodar de verdade). **Veritas** (acervo legal — normas, o que *vale* e não o que *aconteceu*) ✅ schema construído (`veritas_normas`/`veritas_dispositivos`/`veritas_carga`, sem policy de acesso, só via `veritas_consultar`/`veritas_vigente_em`) + extrator de carga curada (`extrator_veritas.py`) — **não rodado contra banco real ainda** (Docker local desligado nesta sessão) |
 
 ### Briefing — blocos com dado real
 
@@ -85,7 +85,9 @@ Três componentes, **um repositório só**:
 | `.github/workflows/` | `briefing-diario.yml` — cron do briefing |
 | `motor/` | Pipeline original pré-Supabase (coletores + montador), mantido como referência |
 | `Evora Manual v10 9 1.md` | Manual do produto — fonte da verdade sobre escopo, fases e princípios |
-| `_versoes_anteriores/` | Arquivo morto (manuais antigos, protótipos, exports) |
+| `Evora_Caderno_Programador.pdf` | Companheiro do Manual v11.0 — o quê e em que ordem (não o porquê). Versão mais recente recebida 20/09 |
+| `Evora_Checklist_Lancamento.pdf` | Checklist de negócio pro lançamento — 3 "portões" (operar com dado real / cobrar / oferecer ao mercado), a maior parte fora do escopo técnico deste repo |
+| `_versoes_anteriores/` | Arquivo morto (manuais antigos, protótipos, exports, versões superadas do Caderno) |
 
 ---
 
@@ -124,7 +126,7 @@ python evora_motor_execucao.py  --tenant-id <uuid> --mundo gabinete
 ## O que falta para o lançamento (deploy)
 
 1. **Commit + push** de todo o trabalho pendente (feito).
-2. **`supabase db push`** — aplicar as 11 migrations no projeto Supabase da nuvem.
+2. **`supabase db push`** — aplicar as 16 migrations no projeto Supabase da nuvem.
 3. **Dashboard do Supabase (nuvem)**, passos que nenhum SQL faz:
    - Auth → Hooks → habilitar Custom Access Token → `evora_token_hook`
      (**bloqueador** — sem isso o JWT não carrega `tenant_id` e a RLS zera tudo)

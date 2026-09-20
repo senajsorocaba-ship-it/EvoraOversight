@@ -144,6 +144,26 @@ do $$ begin
   );
 exception when duplicate_object then null; end $$;
 
+-- Fase 12 (Manual v11.0) — tipos do Veritas: acervo legal CURADO. Irmão do
+-- FARUS, não sucessor — ver farus_estado acima e a seção 25-27 mais abaixo
+-- para a distinção (FARUS = o que aconteceu, nunca envelhece; Veritas = o
+-- que vale, envelhece — norma revogada servida como vigente engana).
+do $$ begin
+  create type veritas_especie as enum (
+    'resolucao', 'lei_complementar', 'lei_organica', 'lei_ordinaria',
+    'decreto_legislativo', 'decreto', 'portaria', 'ato_da_mesa'
+  );
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type veritas_situacao as enum ('vigente', 'alterada', 'revogada');
+exception when duplicate_object then null; end $$;
+
+-- Hierarquia da LC 95/1998 (como se escreve norma no Brasil).
+do $$ begin
+  create type veritas_nivel as enum ('artigo', 'paragrafo', 'inciso', 'alinea', 'item');
+exception when duplicate_object then null; end $$;
+
 -- ---------------------------------------------------------------------
 -- 1. TENANTS — cada gabinete cliente
 -- ---------------------------------------------------------------------
@@ -856,6 +876,95 @@ create table if not exists aegis_acessos (
 
 comment on table aegis_acessos is 'Fase 11 — registro de leitura do cofre. Append-only.';
 
+-- =====================================================================
+-- FASE 12 (Manual v11.0) — VERITAS: acervo legal curado. Irmão do FARUS,
+-- não sucessor: FARUS guarda O QUE ACONTECEU (nunca envelhece — um ato de
+-- 2023 continua verdadeiro como registro histórico); Veritas guarda O QUE
+-- VALE (sim, envelhece — norma revogada servida como vigente produz
+-- resposta errada, e resposta errada sobre prazo regimental faz o
+-- gabinete perder prazo). Por isso a carga é sempre CURADA — nunca
+-- ingestão automática — e cada carregamento de uma norma é uma VERSÃO
+-- nova e imutável; nada é sobrescrito, o histórico de vigência fica
+-- preservado linha a linha (mesma disciplina de "nada se apaga" já usada
+-- em auditoria/farus_itens). Compartilhado por território, como o FARUS
+-- — nunca por tenant. Carga feita por `ao-SUPABASE-BLOCO1/extrator_veritas.py`
+-- (3 etapas: inspecionar → extrair → gerar-sql, a do meio é humana).
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 25. VERITAS_NORMAS — cada linha é uma VERSÃO de uma norma, não a norma
+-- em si. Recarregar a mesma URL após uma alteração cria uma linha nova; a
+-- antiga permanece, com a sua própria janela [vigencia_inicio,
+-- vigencia_fim), para responder "o que valia em 2019" corretamente (ver
+-- veritas_vigente_em na seção 20 de evora_rls_mvp_v1.sql). Nunca escrita
+-- pela aplicação — sem grant para authenticated/anon (ver GRANTS), só
+-- service_role, e mesmo assim só via o SQL que o extrator gera.
+-- ---------------------------------------------------------------------
+create table if not exists veritas_normas (
+  id                uuid primary key default gen_random_uuid(),
+  territorio_id     uuid not null references farus_territorios(id) on delete restrict,
+  especie           veritas_especie not null,
+  numero            text,
+  ano               integer,
+  ementa            text not null,
+  apelido           text,                       -- ex.: 'Regimento Interno'
+  situacao          veritas_situacao not null default 'vigente',
+  data_publicacao   date,
+  vigencia_inicio   date not null,
+  vigencia_fim      date,
+  texto_integral    text,
+  url_oficial       text not null,
+  consultado_em     timestamptz,
+  carregado_por     text not null,
+  verificado_por    text not null,
+  verificado_em     timestamptz not null,
+  criado_em         timestamptz not null default now(),
+  constraint veritas_norma_vigencia_coerente
+    check (vigencia_fim is null or vigencia_fim >= vigencia_inicio)
+);
+
+comment on table veritas_normas is 'Fase 12 — o Veritas: acervo legal curado, uma linha por VERSÃO da norma. Carga sempre curada (extrator_veritas.py), nunca ingestão automática.';
+comment on column veritas_normas.situacao is 'vigente = em vigor hoje; alterada = ainda vale mas foi emendada por norma posterior; revogada = não vale mais. veritas_consultar só devolve situacao = vigente.';
+comment on column veritas_normas.vigencia_inicio is 'Início da janela em que ESTA VERSÃO do texto valeu — não necessariamente a data de publicação da norma original (uma emenda cria uma versão nova com vigencia_inicio na data da emenda).';
+
+-- ---------------------------------------------------------------------
+-- 26. VERITAS_DISPOSITIVOS — os artigos/parágrafos/incisos/alíneas de uma
+-- versão da norma, um por linha (hierarquia da LC 95/1998). artigo_pai
+-- existe pra reconstruir a hierarquia (um inciso pertence a um artigo),
+-- mas `extrator_veritas.py` ainda não o preenche na carga — pendência
+-- conhecida, documentada no CLAUDE.md deste diretório, não escondida.
+-- ---------------------------------------------------------------------
+create table if not exists veritas_dispositivos (
+  id          uuid primary key default gen_random_uuid(),
+  norma_id    uuid not null references veritas_normas(id) on delete cascade,
+  nivel       veritas_nivel not null,
+  rotulo      text not null,     -- ex.: 'Art. 12', '§ 1º', 'I', 'a)'
+  artigo_pai  text,              -- ex.: 'Art. 12', quando nivel <> 'artigo'
+  ordem       integer not null,
+  texto       text not null
+);
+
+comment on table veritas_dispositivos is 'Fase 12 — dispositivos (artigo/parágrafo/inciso/alínea/item) de uma versão de norma do Veritas.';
+
+-- ---------------------------------------------------------------------
+-- 27. VERITAS_CARGA — trilha de cada carregamento (quem, quando, de onde,
+-- com que resultado). Append-only (trigger abaixo), mesma disciplina de
+-- auditoria/aegis_acessos — não é opcional, é a prova de que a carga foi
+-- curada por uma pessoa nomeada, nunca anônima.
+-- ---------------------------------------------------------------------
+create table if not exists veritas_carga (
+  id            uuid primary key default gen_random_uuid(),
+  norma_id      uuid not null references veritas_normas(id) on delete cascade,
+  territorio_id uuid not null references farus_territorios(id) on delete restrict,
+  origem_url    text not null,
+  metodo        text not null default 'extracao',
+  quem          text not null,
+  resultado     text not null default 'sucesso',
+  ocorrido_em   timestamptz not null default now()
+);
+
+comment on table veritas_carga is 'Fase 12 — trilha de carregamento do Veritas. Append-only (trigger abaixo).';
+
 -- ---------------------------------------------------------------------
 -- ÍNDICES — consultas do dia a dia
 -- ---------------------------------------------------------------------
@@ -885,6 +994,14 @@ create unique index if not exists ix_farus_itens_dedup on farus_itens (territori
 create index if not exists ix_farus_itens_busca on farus_itens (territorio_id, especie, publicado_em desc);
 create index if not exists ix_farus_itens_tenant on farus_itens (tenant_origem) where tenant_origem is not null;
 create index if not exists ix_aegis_acessos_cofre on aegis_acessos (cofre_id, ocorrido_em desc);
+
+-- Fase 12 — Veritas
+create index if not exists ix_veritas_normas_territorio on veritas_normas (territorio_id, situacao);
+create index if not exists ix_veritas_normas_url_versao on veritas_normas (url_oficial, verificado_em desc);
+create index if not exists ix_veritas_normas_busca on veritas_normas using gin (to_tsvector('portuguese', ementa));
+create index if not exists ix_veritas_dispositivos_norma on veritas_dispositivos (norma_id, ordem);
+create index if not exists ix_veritas_dispositivos_busca on veritas_dispositivos using gin (to_tsvector('portuguese', texto));
+create index if not exists ix_veritas_carga_norma on veritas_carga (norma_id, ocorrido_em desc);
 
 -- ---------------------------------------------------------------------
 -- FARUS — REGRA ÚNICA DE DEDUPLICAÇÃO E RETENÇÃO
@@ -953,6 +1070,26 @@ drop trigger if exists trg_aegis_acessos_imutavel on aegis_acessos;
 create trigger trg_aegis_acessos_imutavel
   before update or delete on aegis_acessos
   for each row execute function aegis_trilha_imutavel();
+
+-- Trilha de carga do Veritas: mesma disciplina de aegis_acessos —
+-- append-only. NOTA: só a trilha (veritas_carga) é imutável assim;
+-- veritas_normas/veritas_dispositivos NÃO recebem esta trigger de
+-- propósito — a própria Caderno do Programador v11.0 registra o oposto
+-- como um bug real já enfrentado ("chave estrangeira on delete set null
+-- sob gatilho de imutabilidade trava tudo... impossível corrigir norma
+-- carregada por engano"). Uma norma carregada errado precisa poder ser
+-- corrigida via SQL direto (service_role); só a PROVA de que ela foi
+-- carregada por alguém nomeado é que nunca pode ser apagada.
+create or replace function veritas_carga_imutavel()
+returns trigger language plpgsql as $$
+begin
+  raise exception 'Trilha de carga do Veritas é imutável. Tentativa de % rejeitada.', tg_op;
+end $$;
+
+drop trigger if exists trg_veritas_carga_imutavel on veritas_carga;
+create trigger trg_veritas_carga_imutavel
+  before update or delete on veritas_carga
+  for each row execute function veritas_carga_imutavel();
 
 -- ---------------------------------------------------------------------
 -- ATUALIZAÇÃO AUTOMÁTICA DE atualizado_em

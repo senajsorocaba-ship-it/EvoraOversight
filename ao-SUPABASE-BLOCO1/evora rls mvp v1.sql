@@ -108,6 +108,14 @@ alter table aegis_acessos            enable row level security;
 -- grant e sem policy nenhuma, só a função security definer que a usa toca
 -- nela (ver evora_checar_rate_limite, evora_auth_mvp_v1.sql).
 alter table evora_rate_limit         enable row level security;
+-- Veritas (Fase 12, Manual v11.0): mesmo caso de aegis_cofre — sem grant e
+-- sem policy nenhuma em nenhuma das 3 tabelas; a única leitura é pelas
+-- funções security definer veritas_consultar/veritas_vigente_em (seção 20
+-- abaixo), a única escrita é o SQL curado que o extrator gera, rodado como
+-- service_role/superusuário.
+alter table veritas_normas           enable row level security;
+alter table veritas_dispositivos     enable row level security;
+alter table veritas_carga            enable row level security;
 
 -- Força o RLS inclusive para o dono das tabelas (defesa em profundidade)
 alter table tenants               force row level security;
@@ -152,6 +160,9 @@ alter table farus_itens              force row level security;
 alter table aegis_cofre              force row level security;
 alter table aegis_acessos            force row level security;
 alter table evora_rate_limit         force row level security;
+alter table veritas_normas           force row level security;
+alter table veritas_dispositivos     force row level security;
+alter table veritas_carga            force row level security;
 
 -- ---------------------------------------------------------------------
 -- GRANTS DE TABELA — obrigatório para a Data API (PostgREST) enxergar a
@@ -207,6 +218,14 @@ grant select, insert, delete on farus_tenant_territorios to authenticated;
 -- próprio gabinete (policy na seção 17); insert só via aegis_ler
 -- (security definer, já grava sozinha).
 grant select on aegis_acessos to authenticated;
+
+-- Veritas (Fase 12): SEM grant nenhum em veritas_normas/veritas_dispositivos/
+-- veritas_carga para authenticated/anon — mesmo espírito do Aegis. A
+-- aplicação nunca consulta a tabela direto (um select ali dá "permission
+-- denied", por desenho, exatamente como o Caderno do Programador v11.0
+-- descreve); toda leitura passa por veritas_consultar/veritas_vigente_em
+-- (funções security definer, seção 20), que já filtram o que pode ser
+-- citado (situacao = 'vigente') e escondem o resto.
 
 -- service_role ignora RLS por design (ver nota no topo deste arquivo) — o
 -- motor do briefing e outros jobs de servidor precisam de acesso irrestrito
@@ -674,6 +693,133 @@ drop trigger if exists trg_demandas_trava_juridica on demandas;
 create trigger trg_demandas_trava_juridica
   before insert or update on demandas
   for each row execute function evora_travar_demandas_sem_parecer();
+
+-- ---------------------------------------------------------------------
+-- 20. VERITAS (Fase 12, Manual v11.0) — acervo legal curado. Como o Aegis
+-- (seção 17), NENHUMA policy de SELECT nas 3 tabelas — a ausência é a
+-- proteção. Só duas portas de entrada, as duas security definer, as duas
+-- filtrando primeiro se o território pedido é um que o tenant da sessão
+-- realmente acompanha (mesma função farus_territorios_do_tenant() da
+-- seção 16 — Veritas empresta a mesma malha de território do FARUS, não
+-- reinventa uma).
+-- ---------------------------------------------------------------------
+
+-- Consulta corrente: só devolve o que está VIGENTE agora, já filtrado por
+-- termo (busca textual em português) e território — "não acrescente
+-- filtros, eles já estão dentro" (Caderno do Programador v11.0).
+create or replace function veritas_consultar(
+  p_termo        text,
+  p_territorio_id uuid,
+  p_limite       int default 5
+)
+returns table (
+  norma_id           uuid,
+  especie            veritas_especie,
+  numero             text,
+  ano                integer,
+  apelido            text,
+  ementa             text,
+  dispositivo_nivel  veritas_nivel,
+  dispositivo_rotulo text,
+  dispositivo_texto  text,
+  verificado_por     text,
+  url_oficial        text
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if p_territorio_id not in (select farus_territorios_do_tenant()) then
+    raise exception 'Território fora do que este gabinete acompanha.';
+  end if;
+
+  return query
+  select n.id, n.especie, n.numero, n.ano, n.apelido, n.ementa,
+         d.nivel, d.rotulo, d.texto, n.verificado_por, n.url_oficial
+  from veritas_normas n
+  join veritas_dispositivos d on d.norma_id = n.id
+  where n.territorio_id = p_territorio_id
+    and n.situacao = 'vigente'
+    and to_tsvector('portuguese', d.texto || ' ' || n.ementa)
+        @@ plainto_tsquery('portuguese', p_termo)
+  order by ts_rank(
+    to_tsvector('portuguese', d.texto || ' ' || n.ementa),
+    plainto_tsquery('portuguese', p_termo)
+  ) desc
+  limit p_limite;
+end;
+$$;
+
+comment on function veritas_consultar(text, uuid, int) is
+  'Fase 12 — única forma de a aplicação ler o Veritas. Só devolve norma/dispositivo vigente, verificado por pessoa, do território que o tenant acompanha.';
+
+-- Fiscalizar ato antigo exige a norma que valia NA ÉPOCA, não a de hoje.
+-- p_norma_id serve de "âncora": identifica a família de versões pela
+-- espécie+número+ano da norma daquele id (não pelo id em si, que muda a
+-- cada nova versão carregada — ver comentário de veritas_normas), e
+-- devolve a versão cuja janela [vigencia_inicio, vigencia_fim) cobre
+-- p_data. Interpretação explícita desta implementação, já que o Caderno
+-- especifica a assinatura da função mas não o formato de retorno exato —
+-- registrado aqui e em CLAUDE.md para não ficar implícito.
+create or replace function veritas_vigente_em(
+  p_norma_id uuid,
+  p_data     date
+)
+returns table (
+  norma_id           uuid,
+  especie            veritas_especie,
+  numero             text,
+  ano                integer,
+  situacao           veritas_situacao,
+  vigencia_inicio    date,
+  vigencia_fim       date,
+  dispositivo_nivel  veritas_nivel,
+  dispositivo_rotulo text,
+  dispositivo_texto  text
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_ref record;
+begin
+  select especie, numero, ano, territorio_id into v_ref
+  from veritas_normas where id = p_norma_id;
+
+  if not found then
+    raise exception 'Norma % não encontrada.', p_norma_id;
+  end if;
+
+  if v_ref.territorio_id not in (select farus_territorios_do_tenant()) then
+    raise exception 'Território fora do que este gabinete acompanha.';
+  end if;
+
+  return query
+  select n.id, n.especie, n.numero, n.ano, n.situacao,
+         n.vigencia_inicio, n.vigencia_fim,
+         d.nivel, d.rotulo, d.texto
+  from veritas_normas n
+  join veritas_dispositivos d on d.norma_id = n.id
+  where n.especie = v_ref.especie
+    and coalesce(n.numero, '') = coalesce(v_ref.numero, '')
+    and coalesce(n.ano, 0)     = coalesce(v_ref.ano, 0)
+    and n.vigencia_inicio <= p_data
+    and (n.vigencia_fim is null or n.vigencia_fim > p_data)
+  order by d.ordem;
+end;
+$$;
+
+comment on function veritas_vigente_em(uuid, date) is
+  'Fase 12 — devolve a versão da norma (mesma espécie+número+ano de p_norma_id) que valia em p_data, com seus dispositivos. Para auditar ato antigo com o texto que valia na época.';
+
+revoke execute on function veritas_consultar(text, uuid, int) from public, anon;
+grant execute on function veritas_consultar(text, uuid, int) to authenticated;
+revoke execute on function veritas_vigente_em(uuid, date) from public, anon;
+grant execute on function veritas_vigente_em(uuid, date) to authenticated;
 
 -- =====================================================================
 -- TESTE DE ACEITE — a prova que vira argumento de venda
