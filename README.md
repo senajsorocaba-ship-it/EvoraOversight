@@ -34,7 +34,9 @@ nem deploy do front, nem agendador ativo. Tudo abaixo foi validado contra um
 | **Painel web** | ⚠️ 16 telas com layout pronto, mas **só `/briefing` está ligada a dado real** — o resto é maquete estática (portada do PDF de demonstração) |
 | **Reconhecimento facial** (modo descanso) | 🟡 STAND-BY — implementado, **não testado** |
 | **Manual Supremo v11.0** (16/09/2026) | 🟡 Parcial — hook renomeado (`evora_token_hook`), módulo Demandas travado no banco até parecer jurídico, 2 coletores "confirmado" novos (PNCP + Agenda Legislativa, ambos aguardando uma `farus_fontes` liberada por humano pra rodar de verdade). **Veritas** (acervo legal — normas, o que *vale* e não o que *aconteceu*) ✅ schema construído (`veritas_normas`/`veritas_dispositivos`/`veritas_carga`, sem policy de acesso, só via `veritas_consultar`/`veritas_vigente_em`) + extrator de carga curada (`extrator_veritas.py`) |
-| **Manual Supremo v11.1** (20/09/2026) | ✅ Schema construído — **Inteligência Legislativa** (matéria com tramitação, 8 tabelas, compartilhado por território), **Resposta/Minutas** (freio humano para tudo que o gabinete manda pra fora — Évora nunca envia, só registra), **Parecer como Evento** (habilitação é da pessoa, nunca vira papel novo). Testes de aceite entregues (12/12, 12/12, 11/11) copiados pro repo. **Item pendente**: fluxo do requerimento colide com a trava de "não contatar terceiros" — aguarda decisão do fundador (`FILA_v11_1.md`, item 6). **Nada disto rodado contra banco real ainda** (Docker local desligado nesta sessão) |
+| **Manual Supremo v11.1** (20/09/2026) | ✅ Schema construído — **Inteligência Legislativa** (matéria com tramitação, 8 tabelas, compartilhado por território), **Resposta/Minutas** (freio humano para tudo que o gabinete manda pra fora — Évora nunca envia, só registra), **Parecer como Evento** (habilitação é da pessoa, nunca vira papel novo). Testes de aceite entregues (12/12, 12/12, 11/11) copiados pro repo. **Nada disto rodado contra banco real ainda** (Docker local desligado nesta sessão) |
+| **Manual Supremo v11.3** (20/09/2026) | 🟡 Sem mudança de schema — v11.2/v11.3 foram sobretudo editoriais (nomes reais trocados por função em todo o projeto, manual reorganizado em 4 volumes) + **Anexo 26/`Evora_Catalogo_Fontes.md`: catálogo real de fontes do FARUS/Veritas**, com estado de verificação por fonte. É o que falta pra **liberar de verdade** os coletores PNCP/Agenda Legislativa (hoje dormentes por falta de `farus_fontes` configurada) — **ainda não aplicado no banco**, fica pra quando alguém liberar as fontes ✅ do catálogo. Corrigido: Diário Oficial de Sorocaba já era fonte confirmada (só falta o conector, não a fonte). **Fila aberta (`FILA_v11_4.md`)**: nada exige construção agora — só decisões do fundador (preço Aegis Personal, fórmula do Sigma One, fluxo do requerimento) e verificações técnicas |
+| **Aegis A1/A2 + Sigma One** (`Evora_Aegis_Sigma_One_v3.pdf`) | 📋 Spec em maturação, **não construído** — cofre com duas caixas (Mandato/Pessoal) e protocolo de guardiões com quórum. Cheio de `[DECISÃO]` em aberto (quantos guardiões, preço, perguntas jurídicas 38–40). Fora do escopo até essas decisões fecharem |
 
 ### Briefing — blocos com dado real
 
@@ -85,10 +87,12 @@ Três componentes, **um repositório só**:
 | `ao-SUPABASE-BLOCO1/` | SQL de referência (BLOCOs 1–5) + motor e coletores em Python + `CLAUDE.md` com o histórico de decisões por fase |
 | `.github/workflows/` | `briefing-diario.yml` — cron do briefing |
 | `motor/` | Pipeline original pré-Supabase (coletores + montador), mantido como referência |
-| `Evora_Manual_v11_1.md` | Manual do produto — fonte da verdade sobre escopo, fases e princípios (substitui a v10.9.1, arquivada) |
-| `FILA_v11_1.md` | O que entrou depois da emissão da v11.0 — itens novos, decisões e pendências do fundador |
+| `Evora_Manual_v11_3.md` | Manual do produto — fonte da verdade sobre escopo, fases e princípios (substitui a v11.1, arquivada) |
+| `FILA_v11_4.md` | Fila aberta — o que entrou depois da emissão da v11.3, aguardando decisão/verificação, nada pra construir ainda |
+| `Evora_Catalogo_Fontes.md` | Catálogo real de fontes do FARUS/Veritas (extrato do Anexo 26), com estado de verificação por fonte — usar pra liberar `farus_fontes` de verdade |
 | `Evora_Caderno_Programador.pdf` | Companheiro do Manual v11.0 — o quê e em que ordem (não o porquê) |
 | `Evora_Checklist_Lancamento.pdf` | Checklist de negócio pro lançamento — 3 "portões" (operar com dado real / cobrar / oferecer ao mercado), a maior parte fora do escopo técnico deste repo |
+| `Evora_Aegis_Sigma_One_v3.pdf` | Spec do cofre com quórum de guardiões (Aegis A1/A2) — design em maturação, não construído |
 | `_versoes_anteriores/` | Arquivo morto (manuais antigos, protótipos, exports, pacotes entregues já adaptados) |
 
 ---
