@@ -27,7 +27,7 @@ nem deploy do front, nem agendador ativo. Tudo abaixo foi validado contra um
 | **Schema + RLS** (BLOCOs 1–3) | ✅ 39 tabelas (base + Fases 6–13), políticas de isolamento por tenant, teste de aceite da RLS passando (4/4 cenários) |
 | **Motor do briefing** (BLOCO 4) | ✅ Funções `evora_montar_blocos_briefing` / `evora_gerar_briefing_diario` — agregam os 7 blocos canônicos |
 | **Autenticação** (BLOCO 5) | ✅ local (auto-vínculo `auth.users` → `usuarios`, `tenant_id`/`mundo` no JWT via Custom Access Token Hook). ⚠️ **Nunca rodado na nuvem** — exige um passo manual no dashboard (habilitar o hook) |
-| **Coletores** (Fases 6–9) | ✅ Ingestão PNCP/imprensa, Atlas Municipal, coletor de menções por nome, vigia de vereadores — testados contra APIs reais |
+| **Coletores** (Fases 6–9) | ✅ Ingestão PNCP/imprensa, Atlas Municipal, coletor de menções por nome, vigia de vereadores — testados contra APIs reais. **161 testes unitários** (`ao-SUPABASE-BLOCO1/tests/`) cobrindo a lógica pura de todos os 8 scripts |
 | **FARUS F1** (Fase 10) | ✅ Ingestão real do acervo por território (`evora_coletor_farus.py`), leitura no bloco 6 do briefing e na Bia. Testado com Sorocaba-SP (57 itens). **F2–F5 não construídos** (curadoria humana, radar autônomo) |
 | **Aegis A0** (Fase 11) | ✅ Cofre de dado sensível — schema e teste de aceite (10/10) |
 | **Bia por voz** | ✅ local — ativação por palavra-chave ("Bia…"), navegação, perguntas respondidas com dado do próprio tenant, resposta em streaming, fila de fala. Sem invenção (Cláusula de Caráter Travado) |
@@ -93,6 +93,7 @@ Três componentes, **um repositório só**:
 | `Evora_Caderno_Programador.pdf` | Companheiro do Manual v11.0 — o quê e em que ordem (não o porquê) |
 | `Evora_Checklist_Lancamento.pdf` | Checklist de negócio pro lançamento — 3 "portões" (operar com dado real / cobrar / oferecer ao mercado), a maior parte fora do escopo técnico deste repo |
 | `Evora_Aegis_Sigma_One_v3.pdf` | Spec do cofre com quórum de guardiões (Aegis A1/A2) — design em maturação, não construído |
+| `DEPLOY_RUNBOOK.md` | Roteiro de deploy passo a passo — Supabase, Vercel, GitHub Actions, com verificação em cada etapa |
 | `_versoes_anteriores/` | Arquivo morto (manuais antigos, protótipos, exports, pacotes entregues já adaptados) |
 
 ---
@@ -127,9 +128,20 @@ python evora_coletor_farus.py   --tenant-id <uuid>
 python evora_motor_execucao.py  --tenant-id <uuid> --mundo gabinete
 ```
 
+**Testes unitários (coletores + motor, sem tocar rede/banco de verdade):**
+```bash
+cd ao-SUPABASE-BLOCO1
+pip install -r requirements.txt -r requirements-dev.txt
+pytest                              # 161 testes
+```
+
 ---
 
 ## O que falta para o lançamento (deploy)
+
+> Roteiro detalhado, passo a passo com comandos exatos e verificação em cada
+> etapa: **[`DEPLOY_RUNBOOK.md`](DEPLOY_RUNBOOK.md)**. O resumo abaixo é só o
+> checklist rápido.
 
 1. **Commit + push** de todo o trabalho pendente (feito — falta só o `push`).
 2. **`supabase db push`** — aplicar as 17 migrations no projeto Supabase da nuvem.
