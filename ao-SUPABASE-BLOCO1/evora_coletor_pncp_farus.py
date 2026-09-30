@@ -89,6 +89,12 @@ TEMPO_LIMITE = 45
 CABECALHO = {"User-Agent": "Evora-Oversight/1.0 (coletor institucional)"}
 
 
+class FontePendente(Exception):
+    """Decisão D6 bloqueou o território (sem fonte configurada) — não é
+    falha do coletor, então nunca deve contar como tenant "falhado" no
+    agregado de --todos."""
+
+
 # ---------------------------------------------------------------------
 # 1. Busca na fonte
 # ---------------------------------------------------------------------
@@ -198,7 +204,7 @@ def processar_tenant(cfg, tenant, dias, ensaio):
 
     fonte_id = buscar_fonte_configurada(cfg, territorio_id, "contratacao")
     if not fonte_id:
-        raise SystemExit(
+        raise FontePendente(
             f"Sem fonte 'contratacao' configurada para {municipio}-{uf} — "
             "cadastre o PNCP em farus_fontes com estado='configurada' e "
             "liberada_por/liberada_em preenchidos antes de rodar este "
@@ -273,24 +279,33 @@ def main():
     tenants = listar_tenants_ativos(cfg)
     print(f"→ {len(tenants)} tenant(s) ativo(s) encontrado(s).")
     falharam = []
+    pulados = []
     for i, t in enumerate(tenants):
         print(f"\n--- tenant {t['nome_autoridade']} ({t['id']}) ---")
         try:
             processar_tenant(cfg, t, args.dias, args.ensaio)
+        except FontePendente as e:
+            print(f"  ○ pulado (Decisão D6): {e}")
+            pulados.append((t["id"], t["nome_autoridade"]))
         except (SystemExit, Exception) as e:
-            print(f"  ✗ FALHOU/pulado: {e}")
+            print(f"  ✗ FALHOU: {e}")
             falharam.append((t["id"], t["nome_autoridade"]))
         if i < len(tenants) - 1:
             time.sleep(1)
 
-    print(f"\n{len(tenants) - len(falharam)}/{len(tenants)} tenant(s) processado(s) com sucesso.")
-    # Território sem fonte configurada é esperado (a maioria hoje) — não é
-    # falha do coletor, é a trava D6 fazendo o que deve fazer. Por isso
-    # este script nunca sai com código de erro só por falta de fonte;
-    # sai != 0 apenas se TODOS os tenants falharam (sinal de problema real,
-    # não de ausência de liberação humana).
-    if falharam and len(falharam) == len(tenants):
-        raise SystemExit(f"Todos os {len(tenants)} tenant(s) falharam: {falharam}")
+    processados = len(tenants) - len(falharam) - len(pulados)
+    print(f"\n{processados}/{len(tenants)} tenant(s) processado(s) com sucesso "
+          f"({len(pulados)} pulado(s) por falta de fonte D6, {len(falharam)} falha(s) real).")
+    # Território sem fonte configurada (FontePendente) nunca conta como
+    # falha — é a trava D6 fazendo o que deve fazer, esperado até alguém
+    # liberar uma fonte. Este script só sai com código de erro se TODO
+    # tenant que de fato tentou rodar (ou seja, excluindo os pulados por
+    # D6) falhou de verdade — sinal de problema real, não de ausência de
+    # liberação humana. Falha parcial (alguns tenants reais falham, outros
+    # não) não derruba o job inteiro — mesmo espírito de --todos.
+    tentaram = len(tenants) - len(pulados)
+    if falharam and len(falharam) == tentaram:
+        raise SystemExit(f"Todos os {tentaram} tenant(s) que tentaram rodar falharam: {falharam}")
 
 
 if __name__ == "__main__":

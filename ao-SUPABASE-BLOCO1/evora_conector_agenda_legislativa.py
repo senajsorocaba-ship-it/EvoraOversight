@@ -88,6 +88,12 @@ CABECALHO = {
 }
 
 
+class FontePendente(Exception):
+    """Decisão D6 bloqueou o território (sem fonte configurada) — não é
+    falha do conector, então nunca deve contar como tenant "falhado" no
+    agregado de --todos."""
+
+
 def _baixar(url):
     req = urllib.request.Request(url, headers=CABECALHO)
     with urllib.request.urlopen(req, timeout=TEMPO_LIMITE) as r:
@@ -222,7 +228,7 @@ def processar_tenant(cfg, tenant, dominio, n_sessoes, ensaio):
 
     fonte_id = buscar_fonte_configurada(cfg, territorio_id, "ato_oficial")
     if not fonte_id:
-        raise SystemExit(
+        raise FontePendente(
             f"Sem fonte 'ato_oficial' configurada para {municipio}-{uf} — "
             "cadastre a Câmara Sem Papel em farus_fontes com "
             "estado='configurada' e liberada_por/liberada_em preenchidos "
@@ -302,19 +308,29 @@ def main():
     tenants = listar_tenants_ativos(cfg)
     print(f"→ {len(tenants)} tenant(s) ativo(s) encontrado(s).")
     falharam = []
+    pulados = []
     for i, t in enumerate(tenants):
         print(f"\n--- tenant {t['nome_autoridade']} ({t['id']}) ---")
         try:
             processar_tenant(cfg, t, args.dominio, args.sessoes, args.ensaio)
+        except FontePendente as e:
+            print(f"  ○ pulado (Decisão D6): {e}")
+            pulados.append((t["id"], t["nome_autoridade"]))
         except (SystemExit, Exception) as e:
-            print(f"  ✗ FALHOU/pulado: {e}")
+            print(f"  ✗ FALHOU: {e}")
             falharam.append((t["id"], t["nome_autoridade"]))
         if i < len(tenants) - 1:
             time.sleep(1)
 
-    print(f"\n{len(tenants) - len(falharam)}/{len(tenants)} tenant(s) processado(s) com sucesso.")
-    if falharam and len(falharam) == len(tenants):
-        raise SystemExit(f"Todos os {len(tenants)} tenant(s) falharam: {falharam}")
+    processados = len(tenants) - len(falharam) - len(pulados)
+    print(f"\n{processados}/{len(tenants)} tenant(s) processado(s) com sucesso "
+          f"({len(pulados)} pulado(s) por falta de fonte D6, {len(falharam)} falha(s) real).")
+    # Mesma lógica do coletor irmão (evora_coletor_pncp_farus.py): D6 nunca
+    # conta como falha; só sai com erro se todo tenant que de fato tentou
+    # rodar falhou de verdade.
+    tentaram = len(tenants) - len(pulados)
+    if falharam and len(falharam) == tentaram:
+        raise SystemExit(f"Todos os {tentaram} tenant(s) que tentaram rodar falharam: {falharam}")
 
 
 if __name__ == "__main__":
