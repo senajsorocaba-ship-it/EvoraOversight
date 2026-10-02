@@ -144,7 +144,7 @@ pytest                              # 161 testes
 > checklist rápido.
 
 1. **Commit + push** de todo o trabalho pendente (feito — falta só o `push`).
-2. **`supabase db push`** — aplicar as 17 migrations no projeto Supabase da nuvem.
+2. **`supabase db push`** — aplicar as 18 migrations no projeto Supabase da nuvem.
 3. **Dashboard do Supabase (nuvem)**, passos que nenhum SQL faz:
    - Auth → Hooks → habilitar Custom Access Token → `evora_token_hook`
      (**bloqueador** — sem isso o JWT não carrega `tenant_id` e a RLS zera tudo)

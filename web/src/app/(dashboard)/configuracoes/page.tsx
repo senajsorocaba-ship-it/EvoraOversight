@@ -1,6 +1,7 @@
 import { Topbar } from "@/components/topbar";
 import { FooterLegal } from "@/components/footer-legal";
 import { EnrolamentoFacial } from "@/components/enrolamento-facial";
+import { AssuntosInteresse } from "@/components/assuntos-interesse";
 
 export default function ConfiguracoesPage() {
   return (
@@ -9,6 +10,7 @@ export default function ConfiguracoesPage() {
 
       <main className="content">
         <div className="cfg-grid">
+          <AssuntosInteresse />
           <EnrolamentoFacial />
           <div className="cfg-card">
             <div className="cic" style={{ background: "rgba(43,84,120,.3)", color: "#8fbfe0" }}>

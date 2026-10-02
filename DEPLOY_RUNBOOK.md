@@ -51,10 +51,10 @@ Settings → Database → Database password; se esqueceu, reset ali mesmo).
 supabase db push
 ```
 
-Aplica as 17 migrations em `supabase/migrations/` na ordem (schema, RLS, motor,
+Aplica as 18 migrations em `supabase/migrations/` na ordem (schema, RLS, motor,
 auth, atlas, vigia de vereadores, FARUS, Aegis, travessia de mundo, rename do
 hook, trava de Demandas, rate limit, Veritas, Inteligência Legislativa/Resposta/
-Parecer). Cada migration roda em transação — se uma falhar, ela reverte sozinha
+Parecer, Perfil do Gabinete/Assuntos de Interesse). Cada migration roda em transação — se uma falhar, ela reverte sozinha
 e te mostra a linha exata do erro. **Se algo falhar, me cola o erro aqui antes
 de tentar de novo.**
 
@@ -270,6 +270,6 @@ sem checar o Catálogo primeiro.
 ---
 
 *Roteiro escrito com o estado do repositório em 21/09/2026. Se migrations
-novas entrarem depois, o número "39 tabelas"/"17 migrations" acima fica
+novas entrarem depois, o número "39 tabelas"/"18 migrations" acima fica
 desatualizado — confira `ls supabase/migrations/*.sql | wc -l` antes de
 confiar cegamente neste documento.*

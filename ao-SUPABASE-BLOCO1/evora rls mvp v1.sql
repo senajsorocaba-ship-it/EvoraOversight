@@ -1305,6 +1305,58 @@ grant execute on function minuta_pedir_parecer(uuid, text, uuid, text) to authen
 revoke execute on function minuta_situacao_parecer(uuid) from public, anon;
 grant execute on function minuta_situacao_parecer(uuid) to authenticated;
 
+-- ---------------------------------------------------------------------
+-- 24. PERFIL DO GABINETE (autoatendimento) — a única brecha deliberada em
+-- tenants_sem_escrita_pelo_cliente (seção 1): o próprio gabinete pode
+-- definir seus temas_prioritarios (usados pelo motor do briefing,
+-- evora_motor_execucao.py:montar_prompt_sistema) sem abrir escrita geral
+-- na tabela. A função só toca a chave temas_prioritarios dentro de
+-- perfil — todo o resto de tenants continua travado pela policy da
+-- seção 1 (que nunca é alterada aqui).
+-- ---------------------------------------------------------------------
+create or replace function evora_atualizar_temas_prioritarios(p_temas text[])
+returns text[]
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_tenant  uuid := public.evora_tenant_atual();
+  v_limpos  text[];
+begin
+  if v_tenant is null then
+    raise exception 'Sem gabinete identificado — faça login novamente.';
+  end if;
+
+  -- higieniza a entrada: tira espaço nas pontas, descarta vazio/gigante,
+  -- e limita a 25 temas — nunca confia só no que o cliente mandou.
+  select coalesce(array_agg(t order by ord), '{}')
+    into v_limpos
+    from (
+      select t, ord
+        from (
+          select trim(x) as t, ordinality as ord
+            from unnest(coalesce(p_temas, '{}'::text[])) with ordinality as u(x, ordinality)
+        ) bruto
+       where t <> '' and length(t) <= 80
+       order by ord
+       limit 25
+    ) final;
+
+  update public.tenants
+     set perfil = jsonb_set(coalesce(perfil, '{}'::jsonb), '{temas_prioritarios}', to_jsonb(v_limpos))
+   where id = v_tenant;
+
+  return v_limpos;
+end;
+$$;
+
+comment on function evora_atualizar_temas_prioritarios is
+  'Autoatendimento do gabinete: grava perfil.temas_prioritarios (lido por evora_motor_execucao.py no briefing diário). Única escrita permitida em tenants pelo cliente — tudo mais continua bloqueado por tenants_sem_escrita_pelo_cliente (seção 1).';
+
+revoke execute on function evora_atualizar_temas_prioritarios(text[]) from public, anon;
+grant execute on function evora_atualizar_temas_prioritarios(text[]) to authenticated;
+
 -- =====================================================================
 -- TESTE DE ACEITE — a prova que vira argumento de venda
 -- =====================================================================
