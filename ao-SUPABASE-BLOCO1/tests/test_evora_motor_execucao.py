@@ -109,6 +109,15 @@ def test_prompt_sistema_aceita_perfil_com_chave_temas_alternativa():
     assert "segurança" in prompt
 
 
+def test_prompt_sistema_inclui_assunto_de_interesse_recem_cadastrado():
+    # Simula o que a tela de Configurações (evora_atualizar_temas_prioritarios)
+    # grava em perfil.temas_prioritarios — confirma que um assunto novo,
+    # cadastrado pela pessoa, chega de verdade até o prompt que a Bia recebe.
+    tenant = dict(TENANT_BASE, perfil={"temas_prioritarios": ["mobilidade urbana"]})
+    prompt = motor.montar_prompt_sistema(tenant)
+    assert "mobilidade urbana" in prompt
+
+
 # ---------------------------------------------------------------------
 # montar_mensagem_usuario
 # ---------------------------------------------------------------------
