@@ -136,11 +136,12 @@ begin
   select coalesce(jsonb_agg(to_jsonb(af)), '[]'::jsonb) into v_achados from af;
 
   -- ---- Bloco 5: Demandas (ADC-g) — dado real, tabela demandas ---------
-  -- Campos de identificação de cidadão (cidadao_nome/cidadao_contato)
-  -- ficam FORA do briefing por padrão: LGPD ainda pendente do parecer
-  -- P8/P9 (ver CLAUDE.md / constraint demandas_dado_pessoal_exige_consentimento).
+  -- Campos de identificação de solicitante (solicitante_nome/
+  -- solicitante_contato, renomeados na Tarefa 3) ficam FORA do briefing
+  -- por padrão: LGPD ainda pendente do parecer P8/P9 (ver CLAUDE.md /
+  -- constraint demandas_dado_pessoal_exige_consentimento).
   with d as (
-    select protocolo, titulo, tema, bairro, urgencia, status, prazo
+    select protocolo, assunto, tema, bairro, urgencia, status, prazo
     from demandas
     where tenant_id = p_tenant_id and mundo = p_mundo and ativa
       and status not in ('resolvida', 'nao_atendida')

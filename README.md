@@ -24,7 +24,7 @@ nem deploy do front, nem agendador ativo. Tudo abaixo foi validado contra um
 
 | Camada | Estado |
 |---|---|
-| **Schema + RLS** (BLOCOs 1–3) | ✅ 39 tabelas (base + Fases 6–13), políticas de isolamento por tenant, teste de aceite da RLS passando (4/4 cenários) |
+| **Schema + RLS** (BLOCOs 1–3) | ✅ 40 tabelas (base + Fases 6–13 + Demandas/Histórico), políticas de isolamento por tenant, teste de aceite da RLS passando (4/4 cenários) + Demandas (10/10 cenários) |
 | **Motor do briefing** (BLOCO 4) | ✅ Funções `evora_montar_blocos_briefing` / `evora_gerar_briefing_diario` — agregam os 7 blocos canônicos |
 | **Autenticação** (BLOCO 5) | ✅ local (auto-vínculo `auth.users` → `usuarios`, `tenant_id`/`mundo` no JWT via Custom Access Token Hook). ⚠️ **Nunca rodado na nuvem** — exige um passo manual no dashboard (habilitar o hook) |
 | **Coletores** (Fases 6–9) | ✅ Ingestão PNCP/imprensa, Atlas Municipal, coletor de menções por nome, vigia de vereadores — testados contra APIs reais. **161 testes unitários** (`ao-SUPABASE-BLOCO1/tests/`) cobrindo a lógica pura de todos os 8 scripts |
@@ -37,6 +37,7 @@ nem deploy do front, nem agendador ativo. Tudo abaixo foi validado contra um
 | **Manual Supremo v11.1** (20/09/2026) | ✅ Schema construído — **Inteligência Legislativa** (matéria com tramitação, 8 tabelas, compartilhado por território), **Resposta/Minutas** (freio humano para tudo que o gabinete manda pra fora — Évora nunca envia, só registra), **Parecer como Evento** (habilitação é da pessoa, nunca vira papel novo). Testes de aceite entregues (12/12, 12/12, 11/11) copiados pro repo. **Nada disto rodado contra banco real ainda** (Docker local desligado nesta sessão) |
 | **Manual Supremo v11.3** (20/09/2026) | 🟡 Sem mudança de schema — v11.2/v11.3 foram sobretudo editoriais (nomes reais trocados por função em todo o projeto, manual reorganizado em 4 volumes) + **Anexo 26/`Evora_Catalogo_Fontes.md`: catálogo real de fontes do FARUS/Veritas**, com estado de verificação por fonte. É o que falta pra **liberar de verdade** os coletores PNCP/Agenda Legislativa (hoje dormentes por falta de `farus_fontes` configurada) — **ainda não aplicado no banco**, fica pra quando alguém liberar as fontes ✅ do catálogo. Corrigido: Diário Oficial de Sorocaba já era fonte confirmada (só falta o conector, não a fonte). **Fila aberta (`FILA_v11_4.md`)**: nada exige construção agora — só decisões do fundador (preço Aegis Personal, fórmula do Sigma One, fluxo do requerimento) e verificações técnicas |
 | **Aegis A1/A2 + Sigma One** (`Evora_Aegis_Sigma_One_v3.pdf`) | 📋 Spec em maturação, **não construído** — cofre com duas caixas (Mandato/Pessoal) e protocolo de guardiões com quórum. Cheio de `[DECISÃO]` em aberto (quantos guardiões, preço, perguntas jurídicas 38–40). Fora do escopo até essas decisões fecharem |
+| **Base das Demandas + Histórico** (Tarefa 3, Briefing Técnico Guiron 13/11/2026) | ✅ `demandas` alinhada ao vocabulário pedido (`assunto`/`solicitante_*`/`origem`/`encerrado_em`), `demandas_historico` append-only gravado por trigger. Trava jurídica (parecer P8/P9) e exigência de consentimento continuam intactas. **Testado 10/10 cenários contra Postgres real** (`ao-SUPABASE-BLOCO1/evora demandas teste aceite.sql`) — corrigiu de passagem um bug de produção (`trg_demandas_atualizado` nunca funcionou nesta tabela, coluna com nome errado desde a criação) |
 
 ### Briefing — blocos com dado real
 
@@ -54,7 +55,7 @@ Três componentes, **um repositório só**:
 
 ```
 ┌─ web/ ─────────────┐     ┌─ Supabase (Postgres) ─┐
-│ Next.js 16         │────▶│ 39 tabelas + RLS      │
+│ Next.js 16         │────▶│ 40 tabelas + RLS      │
 │ Painel + Bia (voz) │◀────│ funções do briefing   │
 └────────────────────┘     └───────────┬───────────┘
                                        │ service_role
@@ -144,7 +145,7 @@ pytest                              # 161 testes
 > checklist rápido.
 
 1. **Commit + push** de todo o trabalho pendente (feito — falta só o `push`).
-2. **`supabase db push`** — aplicar as 18 migrations no projeto Supabase da nuvem.
+2. **`supabase db push`** — aplicar as 19 migrations no projeto Supabase da nuvem.
 3. **Dashboard do Supabase (nuvem)**, passos que nenhum SQL faz:
    - Auth → Hooks → habilitar Custom Access Token → `evora_token_hook`
      (**bloqueador** — sem isso o JWT não carrega `tenant_id` e a RLS zera tudo)

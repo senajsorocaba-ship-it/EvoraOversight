@@ -89,6 +89,14 @@ do $$ begin
     ('registrada', 'em_andamento', 'aguardando_terceiro', 'resolvida', 'nao_atendida');
 exception when duplicate_object then null; end $$;
 
+-- Tarefa 3 (Briefing Técnico Guiron, 13/11/2026): quem originou a demanda —
+-- cidadão, outro órgão, ou registro interno do próprio gabinete. Conceito
+-- novo, não existia antes desta fase (demandas nasceu pensada só pro
+-- cidadão — ver cidadao_nome/cidadao_contato, agora renomeados abaixo).
+do $$ begin
+  create type evora_origem_demanda as enum ('cidadao', 'orgao', 'interno');
+exception when duplicate_object then null; end $$;
+
 do $$ begin
   create type evora_status_desdobramento as enum
     ('aberto', 'em_andamento', 'concluido', 'cancelado');
@@ -1415,6 +1423,51 @@ comment on table minuta_pareceres is 'Fase 13 — parecer é EVENTO solicitado c
 comment on column minuta_pareceres.parecerista_habilitacao is 'Fase 13 — copiada no momento do parecer. Se a pessoa mudar de habilitação depois, o parecer preserva a da época.';
 comment on column minuta_pareceres.dispensado is 'Fase 13 — a autoridade pode seguir sem parecer. A dispensa fica registrada — proteção dela, não do sistema.';
 
+-- =====================================================================
+-- TAREFA 3 (Briefing Técnico Guiron, 13/11/2026) — alinha `demandas` ao
+-- vocabulário pedido (origem/solicitante/base_legal_lgpd/encerrado_em) e
+-- cria o histórico append-only. Só renomeia e acrescenta — nenhuma coluna
+-- existente perde dado, a trava jurídica (seção 19 do RLS) e a exigência
+-- de consentimento continuam exatamente como estavam.
+-- =====================================================================
+alter table demandas rename column titulo          to assunto;
+alter table demandas rename column cidadao_nome    to solicitante_nome;
+alter table demandas rename column cidadao_contato to solicitante_contato;
+alter table demandas rename column base_legal      to base_legal_lgpd;
+alter table demandas rename column resolvida_em    to encerrado_em;
+alter table demandas rename column criada_em       to criado_em;
+alter table demandas rename column atualizada_em   to atualizado_em;
+-- ACHADO ao renomear: o trigger trg_demandas_atualizado (evora_toca_
+-- atualizado_em(), ver seção de TRIGGERS) sempre escreveu em
+-- `new.atualizado_em` — um nome que a coluna de `demandas` NUNCA teve
+-- (era `atualizada_em`, feminino). Isso quer dizer que todo UPDATE em
+-- demandas vinha falhando com "record new has no field atualizado_em"
+-- desde que esse trigger foi criado — mascarado até agora porque o
+-- módulo está travado (seção 19) e nenhum UPDATE real chegou a rodar
+-- contra ele. O rename acima não é só estética: conserta esse bug.
+alter table demandas add column if not exists origem evora_origem_demanda not null default 'cidadao';
+comment on column demandas.origem is 'Tarefa 3 — quem originou a demanda. Default cidadao preserva o sentido de todo registro anterior a esta coluna existir.';
+
+-- ---------------------------------------------------------------------
+-- DEMANDAS_HISTORICO — trilha de mudança de status, append-only (mesma
+-- disciplina de auditoria/minuta_eventos/aegis_acessos/veritas_carga).
+-- Gravada automaticamente por demandas_registrar_historico (trigger,
+-- seção de TRIGGERS/RLS) — nenhum insert direto é concedido a
+-- authenticated/anon, só o próprio trigger (security definer) escreve.
+-- ---------------------------------------------------------------------
+create table if not exists demandas_historico (
+  id             uuid primary key default gen_random_uuid(),
+  demanda_id     uuid not null references demandas(id) on delete cascade,
+  tenant_id      uuid not null references tenants(id) on delete cascade,
+  evento         text not null,
+  status_anterior evora_status_demanda,
+  status_novo    evora_status_demanda not null,
+  autor_id       uuid references usuarios(id),
+  criado_em      timestamptz not null default now()
+);
+
+comment on table demandas_historico is 'Tarefa 3 — trilha de mudança de status de uma demanda. Append-only (trigger impede update/delete), gravada automaticamente por demandas_registrar_historico.';
+
 -- ---------------------------------------------------------------------
 -- ÍNDICES — consultas do dia a dia
 -- ---------------------------------------------------------------------
@@ -1423,6 +1476,7 @@ create index if not exists idx_fontes_tenant_mundo    on fontes(tenant_id, mundo
 create index if not exists idx_briefings_tenant_data  on briefings(tenant_id, data_referencia desc);
 create index if not exists idx_demandas_tenant_status on demandas(tenant_id, status) where ativa;
 create index if not exists idx_demandas_prazo         on demandas(prazo) where ativa and status <> 'resolvida';
+create index if not exists ix_demandas_historico       on demandas_historico (demanda_id, criado_em desc);
 create index if not exists idx_compromissos_inicio    on compromissos(tenant_id, inicio) where ativo;
 create index if not exists idx_desdob_tenant_status   on desdobramentos(tenant_id, status) where ativo;
 create index if not exists idx_desdob_eventos_pai     on desdobramento_eventos(desdobramento_id);
@@ -1598,6 +1652,23 @@ drop trigger if exists trg_minuta_mudanca on minutas;
 create trigger trg_minuta_mudanca
   after insert or update on minutas
   for each row execute function minuta_registrar_mudanca();
+
+-- Trilha de demandas (Tarefa 3): mesma disciplina de append-only acima.
+-- O trigger que GRAVA (demandas_registrar_historico) precisa resolver
+-- quem é o usuário autenticado via evora_claims() — essa função vive no
+-- BLOCO 2 (evora rls mvp v1.sql), então o trigger de gravação fica lá
+-- junto dela. Aqui só a trava de imutabilidade, que não depende de nada
+-- do BLOCO 2.
+create or replace function demandas_historico_imutavel()
+returns trigger language plpgsql as $$
+begin
+  raise exception 'Histórico de demandas é imutável. Tentativa de % rejeitada.', tg_op;
+end $$;
+
+drop trigger if exists trg_demandas_historico_imutavel on demandas_historico;
+create trigger trg_demandas_historico_imutavel
+  before update or delete on demandas_historico
+  for each row execute function demandas_historico_imutavel();
 
 -- ---------------------------------------------------------------------
 -- ATUALIZAÇÃO AUTOMÁTICA DE atualizado_em

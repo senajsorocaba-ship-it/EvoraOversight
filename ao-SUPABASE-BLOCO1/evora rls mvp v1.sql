@@ -131,6 +131,8 @@ alter table legis_pauta_materias enable row level security;
 alter table minutas           enable row level security;
 alter table minuta_eventos    enable row level security;
 alter table minuta_pareceres  enable row level security;
+-- Tarefa 3 (Briefing Técnico Guiron, 13/11/2026)
+alter table demandas_historico enable row level security;
 
 -- Força o RLS inclusive para o dono das tabelas (defesa em profundidade)
 alter table tenants               force row level security;
@@ -189,6 +191,7 @@ alter table legis_pauta_materias force row level security;
 alter table minutas           force row level security;
 alter table minuta_eventos    force row level security;
 alter table minuta_pareceres  force row level security;
+alter table demandas_historico force row level security;
 
 -- ---------------------------------------------------------------------
 -- GRANTS DE TABELA — obrigatório para a Data API (PostgREST) enxergar a
@@ -267,6 +270,13 @@ grant select on legis_pessoas, legis_orgaos, legis_composicoes, legis_materias,
 -- (minuta_decidir/minuta_pedir_parecer) — nenhum insert/update direto
 -- para authenticated nestas 3 tabelas.
 grant select on minutas, minuta_eventos, minuta_pareceres to authenticated;
+
+-- Tarefa 3 (Briefing Técnico Guiron, 13/11/2026): histórico de demandas —
+-- só leitura pra authenticated, igual minuta_eventos. Nenhum insert/
+-- update/delete concedido aqui: a única escrita é o trigger
+-- demandas_registrar_historico (security definer, seção 25 abaixo), que
+-- não precisa de grant porque roda com privilégio do dono da função.
+grant select on demandas_historico to authenticated;
 
 -- service_role ignora RLS por design (ver nota no topo deste arquivo) — o
 -- motor do briefing e outros jobs de servidor precisam de acesso irrestrito
@@ -1356,6 +1366,57 @@ comment on function evora_atualizar_temas_prioritarios is
 
 revoke execute on function evora_atualizar_temas_prioritarios(text[]) from public, anon;
 grant execute on function evora_atualizar_temas_prioritarios(text[]) to authenticated;
+
+-- ---------------------------------------------------------------------
+-- 25. HISTÓRICO DE DEMANDAS (Tarefa 3, Briefing Técnico Guiron 13/11/2026)
+-- ---------------------------------------------------------------------
+drop policy if exists demandas_historico_leitura on demandas_historico;
+create policy demandas_historico_leitura on demandas_historico
+  for select using (tenant_id = evora_tenant_atual());
+
+-- Grava automaticamente a cada criação/mudança de status de uma demanda.
+-- security definer porque demandas aceita UPDATE direto de authenticated
+-- (política demandas_isolamento, grant na seção de GRANTS) — sem ser
+-- definer, o INSERT abaixo falharia por falta de grant em
+-- demandas_historico (só select foi concedido ali, de propósito —
+-- a única escrita permitida é esta função).
+create or replace function demandas_registrar_historico()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_autor uuid;
+begin
+  if tg_op = 'INSERT' or old.status is distinct from new.status then
+    select u.id into v_autor
+      from public.usuarios u
+     where u.auth_user_id = nullif(public.evora_claims() ->> 'sub', '')::uuid
+       and u.ativo
+     limit 1;
+
+    insert into public.demandas_historico
+      (demanda_id, tenant_id, evento, status_anterior, status_novo, autor_id)
+    values (
+      new.id, new.tenant_id,
+      case when tg_op = 'INSERT' then 'criacao' else 'mudanca_status' end,
+      case when tg_op = 'INSERT' then null else old.status end,
+      new.status,
+      coalesce(v_autor, new.registrada_por)
+    );
+  end if;
+  return new;
+end;
+$$;
+
+comment on function demandas_registrar_historico is
+  'Tarefa 3 — grava automaticamente em demandas_historico a cada criação ou mudança de status. autor_id vem do usuário autenticado (evora_claims); sem sessão (seed/service_role), cai pra registrada_por.';
+
+drop trigger if exists trg_demandas_historico on demandas;
+create trigger trg_demandas_historico
+  after insert or update on demandas
+  for each row execute function demandas_registrar_historico();
 
 -- =====================================================================
 -- TESTE DE ACEITE — a prova que vira argumento de venda

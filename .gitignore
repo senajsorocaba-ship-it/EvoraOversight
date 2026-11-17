@@ -12,3 +12,5 @@ motor/contratos_sorocaba.json
 motor/briefing_*.md
 motor/briefing_*.html
 motor/avisos_evora.log
+motor/coletor_imprensa.log
+motor/pauta_*.json

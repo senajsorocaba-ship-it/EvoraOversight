@@ -92,7 +92,7 @@ insert into compromissos (tenant_id, mundo, titulo, descricao, lugar_id, inicio,
 -- ---------------------------------------------------------------------
 -- 6. DEMANDAS — SEM dado pessoal identificado (LGPD, ver cabeçalho)
 -- ---------------------------------------------------------------------
-insert into demandas (tenant_id, mundo, protocolo, titulo, descricao, tema, bairro, urgencia, status, registrada_por) values
+insert into demandas (tenant_id, mundo, protocolo, assunto, descricao, tema, bairro, urgencia, status, registrada_por) values
   ('a0000000-0000-0000-0000-00000000000a', 'gabinete', 'DEM-2026-0001', 'Iluminação pública precária',
    'Trecho com postes apagados há semanas, relatos recorrentes de moradores.', 'Segurança Pública', 'Zona Norte', 2,
    'registrada', 'a0000000-0000-0000-0000-0000000000b2'),

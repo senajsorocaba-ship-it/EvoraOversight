@@ -51,10 +51,11 @@ Settings → Database → Database password; se esqueceu, reset ali mesmo).
 supabase db push
 ```
 
-Aplica as 18 migrations em `supabase/migrations/` na ordem (schema, RLS, motor,
+Aplica as 19 migrations em `supabase/migrations/` na ordem (schema, RLS, motor,
 auth, atlas, vigia de vereadores, FARUS, Aegis, travessia de mundo, rename do
 hook, trava de Demandas, rate limit, Veritas, Inteligência Legislativa/Resposta/
-Parecer, Perfil do Gabinete/Assuntos de Interesse). Cada migration roda em transação — se uma falhar, ela reverte sozinha
+Parecer, Perfil do Gabinete/Assuntos de Interesse, Demandas renomeada +
+Histórico). Cada migration roda em transação — se uma falhar, ela reverte sozinha
 e te mostra a linha exata do erro. **Se algo falhar, me cola o erro aqui antes
 de tentar de novo.**
 
@@ -62,7 +63,7 @@ de tentar de novo.**
 
 ```sql
 select count(*) from information_schema.tables where table_schema = 'public';
--- esperado: 39
+-- esperado: 40
 select count(*) from pg_policies where schemaname = 'public';
 -- esperado: bem mais que 17 (cada tabela isolada tem sua policy) — não se assuste
 -- com o número, só confirme que não é zero
@@ -270,6 +271,6 @@ sem checar o Catálogo primeiro.
 ---
 
 *Roteiro escrito com o estado do repositório em 21/09/2026. Se migrations
-novas entrarem depois, o número "39 tabelas"/"18 migrations" acima fica
+novas entrarem depois, o número "40 tabelas"/"19 migrations" acima fica
 desatualizado — confira `ls supabase/migrations/*.sql | wc -l` antes de
 confiar cegamente neste documento.*
