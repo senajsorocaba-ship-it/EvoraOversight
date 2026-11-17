@@ -20,7 +20,25 @@
 -- nunca foi ativado em nenhum projeto na nuvem — só testado localmente,
 -- onde a seleção é refeita a cada `supabase db reset` de qualquer forma.
 
-alter function custom_access_token_hook(jsonb) rename to evora_token_hook;
+-- IDEMPOTENTE de propósito: um `alter function ... rename` cru quebra se
+-- este arquivo for replayado contra um banco onde o rename já teve efeito
+-- antes por outro caminho (ex.: Supabase Preview Branches clonando um
+-- projeto onde as migrations foram coladas manualmente no SQL Editor, sem
+-- o histórico de `supabase db push` — então o replay do zero tropeça aqui
+-- mesmo o banco de origem já estando com o nome novo). Guarda por
+-- `to_regprocedure` em vez de confiar que a troca nunca rodou antes.
+do $$
+begin
+  if to_regprocedure('public.evora_token_hook(jsonb)') is not null then
+    raise notice 'evora_token_hook(jsonb) já existe — rename pulado (idempotente).';
+  elsif to_regprocedure('public.custom_access_token_hook(jsonb)') is not null then
+    execute 'alter function custom_access_token_hook(jsonb) rename to evora_token_hook';
+  else
+    raise notice 'Nem custom_access_token_hook nem evora_token_hook existem neste banco — nada a renomear aqui.';
+  end if;
 
-comment on function evora_token_hook is
-  'Hook de Auth do Supabase (ativar em Authentication > Hooks no painel — ver BLOCO_5_AUTENTICACAO.md). Injeta tenant_id/mundo no app_metadata do JWT a partir de usuarios, a cada emissão de token.';
+  if to_regprocedure('public.evora_token_hook(jsonb)') is not null then
+    execute $c$comment on function evora_token_hook is
+      'Hook de Auth do Supabase (ativar em Authentication > Hooks no painel — ver BLOCO_5_AUTENTICACAO.md). Injeta tenant_id/mundo no app_metadata do JWT a partir de usuarios, a cada emissão de token.'$c$;
+  end if;
+end $$;
